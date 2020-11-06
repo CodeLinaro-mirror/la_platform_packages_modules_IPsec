@@ -33,13 +33,14 @@ java_sdk_library {
     libs: [
         "unsupportedappusage",
         "framework-annotations-lib",
-        "framework-telephony-stubs",
+        "conscrypt.module.public.api",
     ],
 
     api_packages: [
         "android.net.eap",
         "android.net.ipsec.ike",
         "android.net.ipsec.ike.exceptions",
+        "android.net.ipsec.ike.ike3gpp",
     ],
 
     hidden_api_packages: [

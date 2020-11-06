@@ -79,7 +79,7 @@ public final class IkeSessionParams {
 
     /** @hide */
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({IKE_OPTION_ACCEPT_ANY_REMOTE_ID, IKE_OPTION_EAP_ONLY_AUTH})
+    @IntDef({IKE_OPTION_ACCEPT_ANY_REMOTE_ID, IKE_OPTION_EAP_ONLY_AUTH, IKE_OPTION_MOBIKE})
     public @interface IkeOption {}
 
     /**
@@ -96,9 +96,24 @@ public final class IkeSessionParams {
      * <p>@see {@link Builder#setAuthEap(X509Certificate, EapSessionConfig)}
      */
     public static final int IKE_OPTION_EAP_ONLY_AUTH = 1;
+    /**
+     * If set, the IKE library will attempt to enable MOBIKE for the resulting IKE Session.
+     *
+     * <p>Use of MOBIKE in the IKE Session requires the peer to also support MOBIKE.
+     *
+     * <p>If this option is set for an IKE Session, Transport-mode SAs will not be allowed in that
+     * Session.
+     *
+     * <p>Checking for MOBIKE use in an IKE Session is done via {@link
+     * IkeSessionConfiguration#isIkeExtensionEnabled}.
+     *
+     * @hide
+     */
+    // TODO(b/170770939): update javadoc scoping to SDK S+
+    public static final int IKE_OPTION_MOBIKE = 2;
 
     private static final int MIN_IKE_OPTION = IKE_OPTION_ACCEPT_ANY_REMOTE_ID;
-    private static final int MAX_IKE_OPTION = IKE_OPTION_EAP_ONLY_AUTH;
+    private static final int MAX_IKE_OPTION = IKE_OPTION_MOBIKE;
 
     /** @hide */
     @VisibleForTesting static final int IKE_HARD_LIFETIME_SEC_MINIMUM = 300; // 5 minutes
@@ -296,11 +311,7 @@ public final class IkeSessionParams {
         return mRetransTimeoutMsList;
     }
 
-    /**
-     * Retrieves the configured Ike3gppExtension, or null if it was not set.
-     *
-     * @hide
-     */
+    /** Retrieves the configured Ike3gppExtension, or null if it was not set. */
     @Nullable
     public Ike3gppExtension getIke3gppExtension() {
         return mIke3gppExtension;
@@ -917,12 +928,10 @@ public final class IkeSessionParams {
          * <p>Setting the Ike3gppExtension also enables support for non-configurable payloads, such
          * as the Notify - BACKOFF_TIMER payload.
          *
-         * @see <a href="http://www.3gpp.org/ftp//Specs/archive/24_series/24.302/24302-g40.zip">TS
-         *     124 302, Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP access
-         *     networks</a>
+         * @see 3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP
+         *     access networks
          * @param ike3gppExtension the Ike3gppExtension to use for this IKE Session.
          * @return Builder this, to facilitate chaining.
-         * @hide
          */
         @NonNull
         public Builder setIke3gppExtension(@NonNull Ike3gppExtension ike3gppExtension) {
