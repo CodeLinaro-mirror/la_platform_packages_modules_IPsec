@@ -77,6 +77,7 @@ import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -89,6 +90,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.Nullable;
 import android.app.AlarmManager;
 import android.content.Context;
 import android.net.eap.EapSessionConfig;
@@ -109,7 +111,13 @@ import android.net.ipsec.ike.TransportModeChildSessionParams;
 import android.net.ipsec.ike.TunnelModeChildSessionParams;
 import android.net.ipsec.ike.exceptions.IkeException;
 import android.net.ipsec.ike.exceptions.IkeInternalException;
+import android.net.ipsec.ike.exceptions.IkeNetworkDiedException;
 import android.net.ipsec.ike.exceptions.IkeProtocolException;
+import android.net.ipsec.ike.exceptions.protocol.AuthenticationFailedException;
+import android.net.ipsec.ike.exceptions.protocol.InvalidSyntaxException;
+import android.net.ipsec.ike.exceptions.protocol.NoValidProposalChosenException;
+import android.net.ipsec.ike.exceptions.protocol.UnrecognizedIkeProtocolException;
+import android.net.ipsec.ike.exceptions.protocol.UnsupportedCriticalPayloadException;
 import android.net.ipsec.ike.ike3gpp.Ike3gppBackoffTimer;
 import android.net.ipsec.ike.ike3gpp.Ike3gppExtension;
 import android.net.ipsec.ike.ike3gpp.Ike3gppExtension.Ike3gppCallback;
@@ -137,11 +145,6 @@ import com.android.internal.net.ipsec.ike.SaRecord.SaRecordHelper;
 import com.android.internal.net.ipsec.ike.crypto.IkeCipher;
 import com.android.internal.net.ipsec.ike.crypto.IkeMacIntegrity;
 import com.android.internal.net.ipsec.ike.crypto.IkeMacPrf;
-import com.android.internal.net.ipsec.ike.exceptions.AuthenticationFailedException;
-import com.android.internal.net.ipsec.ike.exceptions.InvalidSyntaxException;
-import com.android.internal.net.ipsec.ike.exceptions.NoValidProposalChosenException;
-import com.android.internal.net.ipsec.ike.exceptions.UnrecognizedIkeProtocolException;
-import com.android.internal.net.ipsec.ike.exceptions.UnsupportedCriticalPayloadException;
 import com.android.internal.net.ipsec.ike.message.IkeAuthDigitalSignPayload;
 import com.android.internal.net.ipsec.ike.message.IkeAuthPayload;
 import com.android.internal.net.ipsec.ike.message.IkeAuthPskPayload;
@@ -172,6 +175,7 @@ import com.android.internal.net.ipsec.ike.message.IkeSaPayload.PrfTransform;
 import com.android.internal.net.ipsec.ike.message.IkeSkfPayload;
 import com.android.internal.net.ipsec.ike.message.IkeTestUtils;
 import com.android.internal.net.ipsec.ike.message.IkeTsPayload;
+import com.android.internal.net.ipsec.ike.net.IkeDefaultNetworkCallback;
 import com.android.internal.net.ipsec.ike.testmode.DeterministicSecureRandom;
 import com.android.internal.net.ipsec.ike.testutils.CertUtils;
 import com.android.internal.net.ipsec.ike.utils.IkeSecurityParameterIndex;
@@ -804,6 +808,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
                         mLooper.getLooper(),
                         mSpyContext,
                         mIpSecManager,
+                        mMockConnectManager,
                         ikeParams,
                         mChildSessionParams,
                         mSpyUserCbExecutor,
@@ -815,6 +820,12 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         mLooper.dispatchAll();
         ikeSession.mLocalAddress = LOCAL_ADDRESS;
         assertEquals(REMOTE_ADDRESS, ikeSession.mRemoteAddress);
+
+        if (ikeParams.getConfiguredNetwork() == null) {
+            verify(mMockConnectManager, atLeast(1)).getActiveNetwork();
+        } else {
+            verify(mMockConnectManager, never()).getActiveNetwork();
+        }
 
         // Setup socket instances used by the IkeSessionStateMachine
         // TODO: rename these from spy to mock.
@@ -4590,7 +4601,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void testOpenChildSessionWithMobikeAndTransport() throws Exception {
-        mIkeSessionStateMachine = restartStateMachineWithMobike();
+        mIkeSessionStateMachine = restartStateMachineWithMobikeConfigured();
 
         mIkeSessionStateMachine.openChildSession(
                 mock(TransportModeChildSessionParams.class), mock(ChildSessionCallback.class));
@@ -4663,6 +4674,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
                         mLooper.getLooper(),
                         mSpyContext,
                         mIpSecManager,
+                        mMockConnectManager,
                         mockSessionParams,
                         mChildSessionParams,
                         mSpyUserCbExecutor,
@@ -5149,11 +5161,15 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
     @Test
     public void testMobikeEnabled() throws Exception {
         verifyMobikeEnabled(true /* doesPeerSupportMobike */);
+
+        killSessionAndVerifyNetworkCallback(true /* expectCallbackUnregistered */);
     }
 
     @Test
     public void testMobikeEnabledPeerUnsupported() throws Exception {
         verifyMobikeEnabled(false /* doesPeerSupportMobike */);
+
+        killSessionAndVerifyNetworkCallback(false /* expectCallbackUnregistered */);
     }
 
     @Test
@@ -5171,8 +5187,16 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         assertTrue(mIkeSessionStateMachine.mSupportMobike);
     }
 
-    private void verifyMobikeEnabled(boolean doesPeerSupportMobike) throws Exception {
-        mIkeSessionStateMachine = restartStateMachineWithMobike();
+    /**
+     * Restarts the IkeSessionStateMachine with MOBIKE enabled. If doesPeerSupportMobike, MOBIKE
+     * will be active for the Session.
+     *
+     * @return the registered IkeDefaultNetworkCallack is returned if MOBIKE is active, else null
+     */
+    @Nullable
+    private IkeDefaultNetworkCallback verifyMobikeEnabled(boolean doesPeerSupportMobike)
+            throws Exception {
+        mIkeSessionStateMachine = restartStateMachineWithMobikeConfigured();
         mockIkeInitAndTransitionToIkeAuth(mIkeSessionStateMachine.mCreateIkeLocalIkeAuth);
 
         // Build IKE AUTH response. Include MOBIKE_SUPPORTED if doesPeerSupportMobike is true
@@ -5212,9 +5236,25 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         assertTrue(isMobikeSupportIndicated);
 
         assertEquals(doesPeerSupportMobike, mIkeSessionStateMachine.mSupportMobike);
+
+        ArgumentCaptor<IkeDefaultNetworkCallback> networkCallbackCaptor =
+                ArgumentCaptor.forClass(IkeDefaultNetworkCallback.class);
+        verify(mMockConnectManager, doesPeerSupportMobike ? times(1) : never())
+                .registerDefaultNetworkCallback(networkCallbackCaptor.capture(), any());
+
+        return doesPeerSupportMobike ? networkCallbackCaptor.getValue() : null;
     }
 
-    private IkeSessionStateMachine restartStateMachineWithMobike() throws Exception {
+    private void killSessionAndVerifyNetworkCallback(boolean expectCallbackUnregistered) {
+        mIkeSessionStateMachine.killSession();
+        mLooper.dispatchAll();
+
+        verify(mMockConnectManager, expectCallbackUnregistered ? times(1) : never())
+                .unregisterNetworkCallback(any(IkeDefaultNetworkCallback.class));
+    }
+
+    /** Restarts the IkeSessionStateMachine with MOBIKE configured in the IkeSessionParams. */
+    private IkeSessionStateMachine restartStateMachineWithMobikeConfigured() throws Exception {
         mIkeSessionStateMachine.quitNow();
         reset(mMockChildSessionFactoryHelper);
         setupChildStateMachineFactory(mMockChildSessionStateMachine);
@@ -5225,5 +5265,37 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
                         .addIkeOption(IKE_OPTION_MOBIKE)
                         .build();
         return makeAndStartIkeSession(ikeSessionParams);
+    }
+
+    @Test
+    public void testMobikeNetworkCallbackRegistrationFails() throws Exception {
+        doThrow(new RuntimeException("Failed to register IKE NetworkCallback"))
+                .when(mMockConnectManager)
+                .registerDefaultNetworkCallback(any(IkeDefaultNetworkCallback.class), any());
+
+        mIkeSessionStateMachine = restartStateMachineWithMobikeConfigured();
+        mockIkeInitAndTransitionToIkeAuth(mIkeSessionStateMachine.mCreateIkeLocalIkeAuth);
+
+        // Send IKE_AUTH resp and indicate MOBIKE support
+        List<IkePayload> authRelatedPayloads = new ArrayList<>();
+        authRelatedPayloads.add(new IkeNotifyPayload(NOTIFY_TYPE_MOBIKE_SUPPORTED));
+        ReceivedIkePacket authResp = makeIkeAuthRespWithChildPayloads(authRelatedPayloads);
+        mIkeSessionStateMachine.sendMessage(
+                IkeSessionStateMachine.CMD_RECEIVE_IKE_PACKET, authResp);
+        mLooper.dispatchAll();
+
+        verify(mMockConnectManager)
+                .registerDefaultNetworkCallback(any(IkeDefaultNetworkCallback.class), any());
+        verify(mMockIkeSessionCallback).onClosedExceptionally(any(IkeInternalException.class));
+        verify(mMockConnectManager).unregisterNetworkCallback(any(IkeDefaultNetworkCallback.class));
+        assertNull(mIkeSessionStateMachine.getCurrentState());
+    }
+
+    @Test
+    public void testMobikeEnabledNetworkDies() throws Exception {
+        IkeDefaultNetworkCallback callback = verifyMobikeEnabled(true /* doesPeerSupportMobike */);
+        callback.onLost(mMockDefaultNetwork);
+
+        verify(mMockIkeSessionCallback).onError(any(IkeNetworkDiedException.class));
     }
 }
