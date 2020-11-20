@@ -61,11 +61,14 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.net.IpSecManager;
 import android.net.IpSecManager.ResourceUnavailableException;
 import android.net.IpSecManager.SpiUnavailableException;
 import android.net.IpSecManager.UdpEncapsulationSocket;
 import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.net.ipsec.ike.ChildSessionCallback;
 import android.net.ipsec.ike.ChildSessionParams;
 import android.net.ipsec.ike.IkeSaProposal;
@@ -80,7 +83,12 @@ import android.net.ipsec.ike.IkeSessionParams.IkeAuthPskConfig;
 import android.net.ipsec.ike.TransportModeChildSessionParams;
 import android.net.ipsec.ike.exceptions.IkeException;
 import android.net.ipsec.ike.exceptions.IkeInternalException;
+import android.net.ipsec.ike.exceptions.IkeNetworkDiedException;
 import android.net.ipsec.ike.exceptions.IkeProtocolException;
+import android.net.ipsec.ike.exceptions.protocol.AuthenticationFailedException;
+import android.net.ipsec.ike.exceptions.protocol.InvalidKeException;
+import android.net.ipsec.ike.exceptions.protocol.InvalidSyntaxException;
+import android.net.ipsec.ike.exceptions.protocol.NoValidProposalChosenException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -107,10 +115,6 @@ import com.android.internal.net.ipsec.ike.SaRecord.SaLifetimeAlarmScheduler;
 import com.android.internal.net.ipsec.ike.crypto.IkeCipher;
 import com.android.internal.net.ipsec.ike.crypto.IkeMacIntegrity;
 import com.android.internal.net.ipsec.ike.crypto.IkeMacPrf;
-import com.android.internal.net.ipsec.ike.exceptions.AuthenticationFailedException;
-import com.android.internal.net.ipsec.ike.exceptions.InvalidKeException;
-import com.android.internal.net.ipsec.ike.exceptions.InvalidSyntaxException;
-import com.android.internal.net.ipsec.ike.exceptions.NoValidProposalChosenException;
 import com.android.internal.net.ipsec.ike.ike3gpp.Ike3gppExtensionExchange;
 import com.android.internal.net.ipsec.ike.keepalive.IkeNattKeepalive;
 import com.android.internal.net.ipsec.ike.message.IkeAuthDigitalSignPayload;
@@ -139,6 +143,10 @@ import com.android.internal.net.ipsec.ike.message.IkePayload;
 import com.android.internal.net.ipsec.ike.message.IkeSaPayload;
 import com.android.internal.net.ipsec.ike.message.IkeSaPayload.IkeProposal;
 import com.android.internal.net.ipsec.ike.message.IkeVendorPayload;
+import com.android.internal.net.ipsec.ike.net.IkeDefaultNetworkCallback;
+import com.android.internal.net.ipsec.ike.net.IkeNetworkCallbackBase;
+import com.android.internal.net.ipsec.ike.net.IkeNetworkUpdater;
+import com.android.internal.net.ipsec.ike.net.IkeSpecificNetworkCallback;
 import com.android.internal.net.ipsec.ike.utils.IkeAlarmReceiver;
 import com.android.internal.net.ipsec.ike.utils.IkeSecurityParameterIndex;
 import com.android.internal.net.ipsec.ike.utils.IkeSpiGenerator;
@@ -188,7 +196,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *      Exchange Type = {IkeInit | IkeAuth | Create | Delete | Info}
  * </pre>
  */
-public class IkeSessionStateMachine extends AbstractSessionStateMachine {
+public class IkeSessionStateMachine extends AbstractSessionStateMachine
+        implements IkeNetworkUpdater {
     // Package private
     static final String TAG = "IkeSessionStateMachine";
 
@@ -346,8 +355,22 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
         CMD_TO_STR.put(CMD_LOCAL_REQUEST_DPD, "DPD");
     }
 
+    private static final NetworkRequest NETWORK_REQUEST =
+            new NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build();
+
     /** Package */
     @VisibleForTesting final IkeSessionParams mIkeSessionParams;
+
+    // Underlying Network for this IKE Session. May change if MOBIKE is enabled.
+    private Network mNetwork;
+
+    // Network callback used to keep IkeSessionStateMachine aware of Network changes for
+    // MOBIKE-enabled sessions. Initialized if MOBIKE support is determined for the IKE Session.
+    private IkeNetworkCallbackBase mNetworkCallback;
+
+    private final ConnectivityManager mConnectivityManager;
 
     /** Map that stores all IkeSaRecords, keyed by locally generated IKE SPI. */
     private final LongSparseArray<IkeSaRecord> mLocalSpiToIkeSaRecordMap;
@@ -496,6 +519,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
             Looper looper,
             Context context,
             IpSecManager ipSecManager,
+            ConnectivityManager connectMgr,
             IkeSessionParams ikeParams,
             ChildSessionParams firstChildParams,
             Executor userCbExecutor,
@@ -534,6 +558,16 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
         sIkeAlarmReceiver.registerIkeSession(mIkeSessionId, getHandler());
 
         mIkeSessionParams = ikeParams;
+        mConnectivityManager = connectMgr;
+        if (mIkeSessionParams.getConfiguredNetwork() != null) {
+            mNetwork = mIkeSessionParams.getConfiguredNetwork();
+        } else {
+            mNetwork = connectMgr.getActiveNetwork();
+            if (mNetwork == null) {
+                throw new IllegalStateException("No active default network found");
+            }
+        }
+
         mEapAuthenticatorFactory = eapAuthenticatorFactory;
 
         // SaProposals.Builder guarantees there is at least one SA proposal, and each SA proposal
@@ -551,7 +585,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
         mIpSecManager = ipSecManager;
         mAlarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-        mRandomFactory = new RandomnessFactory(mContext, mIkeSessionParams.getNetwork());
+        mRandomFactory = new RandomnessFactory(mContext, mNetwork);
         mIkeSpiGenerator = new IkeSpiGenerator(mRandomFactory);
         mIpSecSpiGenerator = new IpSecSpiGenerator(mIpSecManager, mRandomFactory);
 
@@ -614,6 +648,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
                 looper,
                 context,
                 ipSecManager,
+                context.getSystemService(ConnectivityManager.class),
                 ikeParams,
                 firstChildParams,
                 userCbExecutor,
@@ -983,6 +1018,11 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
             mIkeSocket.releaseReference(this);
         }
 
+        if (mNetworkCallback != null) {
+            mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
+            mNetworkCallback = null;
+        }
+
         sIkeAlarmReceiver.unregisterIkeSession(mIkeSessionId);
 
         synchronized (IKE_SESSION_LOCK) {
@@ -1066,17 +1106,19 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
         @Override
         public void enterState() {
             try {
-                Network network = mIkeSessionParams.getNetwork();
-
                 // TODO(b/149954916): Do DNS resolution asynchronously and support resolving
                 // multiple addresses.
-                mRemoteAddress = network.getByName(mIkeSessionParams.getServerHostname());
+                mRemoteAddress = mNetwork.getByName(mIkeSessionParams.getServerHostname());
 
                 boolean isIpv4 = mRemoteAddress instanceof Inet4Address;
                 if (isIpv4) {
-                    mIkeSocket = IkeUdp4Socket.getInstance(network, IkeSessionStateMachine.this);
+                    mIkeSocket =
+                            IkeUdp4Socket.getInstance(
+                                    mNetwork, IkeSessionStateMachine.this, getHandler());
                 } else {
-                    mIkeSocket = IkeUdp6Socket.getInstance(network, IkeSessionStateMachine.this);
+                    mIkeSocket =
+                            IkeUdp6Socket.getInstance(
+                                    mNetwork, IkeSessionStateMachine.this, getHandler());
                 }
 
                 FileDescriptor sock =
@@ -1084,7 +1126,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
                                 isIpv4 ? OsConstants.AF_INET : OsConstants.AF_INET6,
                                 OsConstants.SOCK_DGRAM,
                                 OsConstants.IPPROTO_UDP);
-                network.bindSocket(sock);
+                mNetwork.bindSocket(sock);
                 Os.connect(sock, mRemoteAddress, mIkeSocket.getIkeServerPort());
                 InetSocketAddress localAddr = (InetSocketAddress) Os.getsockname(sock);
                 mLocalAddress = localAddr.getAddress();
@@ -3084,7 +3126,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
                 try {
                     IkeSocket newSocket =
                             IkeUdpEncapSocket.getIkeUdpEncapSocket(
-                                    mIkeSessionParams.getNetwork(),
+                                    mNetwork,
                                     mIpSecManager,
                                     IkeSessionStateMachine.this,
                                     getHandler().getLooper());
@@ -3257,8 +3299,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
             }
 
             IkeSessionConnectionInfo ikeConnInfo =
-                    new IkeSessionConnectionInfo(
-                            mLocalAddress, mRemoteAddress, mIkeSessionParams.getNetwork());
+                    new IkeSessionConnectionInfo(mLocalAddress, mRemoteAddress, mNetwork);
 
             return new IkeSessionConfiguration(
                     ikeConnInfo, configPayload, mRemoteVendorIds, mEnabledExtensions);
@@ -3273,8 +3314,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
         }
 
         protected void handleNotifyInLastAuthResp(
-                IkeNotifyPayload notifyPayload, IkeAuthPayload authPayload)
-                throws IkeProtocolException {
+                IkeNotifyPayload notifyPayload, IkeAuthPayload authPayload) throws IkeException {
             if (notifyPayload.isErrorNotify()) {
                 if (notifyPayload.isNewChildSaNotify() && authPayload != null) {
                     // If error is for creating Child and Auth payload is included, try
@@ -3292,6 +3332,27 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
                     && notifyPayload.notifyType == NOTIFY_TYPE_MOBIKE_SUPPORTED) {
                 mSupportMobike = true;
                 mEnabledExtensions.add(EXTENSION_TYPE_MOBIKE);
+
+                try {
+                    if (mIkeSessionParams.getConfiguredNetwork() != null) {
+                        // Caller configured a specific Network - track it
+                        mNetworkCallback =
+                                new IkeSpecificNetworkCallback(
+                                        IkeSessionStateMachine.this, mNetwork, mLocalAddress);
+                        mConnectivityManager.registerNetworkCallback(
+                                NETWORK_REQUEST, mNetworkCallback, getHandler());
+                    } else {
+                        // Caller did not configure a specific Network - track the default
+                        mNetworkCallback =
+                                new IkeDefaultNetworkCallback(
+                                        IkeSessionStateMachine.this, mNetwork, mLocalAddress);
+                        mConnectivityManager.registerDefaultNetworkCallback(
+                                mNetworkCallback, getHandler());
+                    }
+                } catch (RuntimeException e) {
+                    // Error occurred while registering the NetworkCallback
+                    throw new IkeInternalException("Error while registering NetworkCallback", e);
+                }
                 return;
             } else {
                 // Unknown and unexpected status notifications are ignored as per
@@ -3359,7 +3420,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
                     performFirstChildNegotiation(
                             childReqList, extractChildPayloadsFromMessage(ikeMessage));
                 }
-            } catch (IkeProtocolException e) {
+            } catch (IkeException e) {
                 if (!mUseEap) {
                     // Notify the remote because they may have set up the IKE SA.
                     sendEncryptedIkeMessage(buildIkeDeleteReq(mCurrentIkeSaRecord));
@@ -3473,7 +3534,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
             return buildIkeAuthReqMessage(payloadList);
         }
 
-        private void validateIkeAuthResp(IkeMessage authResp) throws IkeProtocolException {
+        private void validateIkeAuthResp(IkeMessage authResp) throws IkeException {
             // Validate IKE Authentication
             IkeAuthPayload authPayload = null;
             List<IkeCertPayload> certPayloads = new LinkedList<>();
@@ -3819,7 +3880,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
 
                 performFirstChildNegotiation(
                         mFirstChildReqList, extractChildPayloadsFromMessage(ikeMessage));
-            } catch (IkeProtocolException e) {
+            } catch (IkeException e) {
                 // Notify the remote because they may have set up the IKE SA.
                 sendEncryptedIkeMessage(buildIkeDeleteReq(mCurrentIkeSaRecord));
                 handleIkeFatalError(e);
@@ -3835,7 +3896,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
             handleIkeFatalError(ikeException);
         }
 
-        private void validateIkeAuthRespPostEap(IkeMessage authResp) throws IkeProtocolException {
+        private void validateIkeAuthRespPostEap(IkeMessage authResp) throws IkeException {
             IkeAuthPayload authPayload = null;
 
             // Process 3GPP-specific payloads before verifying IKE_AUTH to ensure that the
@@ -4900,5 +4961,17 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine {
 
             return payloadList;
         }
+    }
+
+    @Override
+    public void onUnderlyingNetworkUpdated(Network network) {
+        // TODO(b/170781365): update IkeSessionStateMachine States to handle Network changes
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public void onUnderlyingNetworkDied() {
+        executeUserCallback(
+                () -> mIkeSessionCallback.onError(new IkeNetworkDiedException(mNetwork)));
     }
 }
