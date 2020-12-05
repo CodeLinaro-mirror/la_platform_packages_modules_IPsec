@@ -35,24 +35,24 @@ import static android.net.ipsec.ike.exceptions.IkeProtocolException.ERROR_TYPE_T
 import static android.net.ipsec.ike.exceptions.IkeProtocolException.ERROR_TYPE_UNSUPPORTED_CRITICAL_PAYLOAD;
 
 import android.annotation.IntDef;
+import android.net.ipsec.ike.exceptions.AuthenticationFailedException;
+import android.net.ipsec.ike.exceptions.ChildSaNotFoundException;
+import android.net.ipsec.ike.exceptions.FailedCpRequiredException;
 import android.net.ipsec.ike.exceptions.IkeProtocolException;
-import android.net.ipsec.ike.exceptions.protocol.AuthenticationFailedException;
-import android.net.ipsec.ike.exceptions.protocol.ChildSaNotFoundException;
-import android.net.ipsec.ike.exceptions.protocol.FailedCpRequiredException;
-import android.net.ipsec.ike.exceptions.protocol.InternalAddressFailureException;
-import android.net.ipsec.ike.exceptions.protocol.InvalidIkeSpiException;
-import android.net.ipsec.ike.exceptions.protocol.InvalidKeException;
-import android.net.ipsec.ike.exceptions.protocol.InvalidMajorVersionException;
-import android.net.ipsec.ike.exceptions.protocol.InvalidMessageIdException;
-import android.net.ipsec.ike.exceptions.protocol.InvalidSelectorsException;
-import android.net.ipsec.ike.exceptions.protocol.InvalidSyntaxException;
-import android.net.ipsec.ike.exceptions.protocol.NoAdditionalSasException;
-import android.net.ipsec.ike.exceptions.protocol.NoValidProposalChosenException;
-import android.net.ipsec.ike.exceptions.protocol.SinglePairRequiredException;
-import android.net.ipsec.ike.exceptions.protocol.TemporaryFailureException;
-import android.net.ipsec.ike.exceptions.protocol.TsUnacceptableException;
-import android.net.ipsec.ike.exceptions.protocol.UnrecognizedIkeProtocolException;
-import android.net.ipsec.ike.exceptions.protocol.UnsupportedCriticalPayloadException;
+import android.net.ipsec.ike.exceptions.InternalAddressFailureException;
+import android.net.ipsec.ike.exceptions.InvalidIkeSpiException;
+import android.net.ipsec.ike.exceptions.InvalidKeException;
+import android.net.ipsec.ike.exceptions.InvalidMajorVersionException;
+import android.net.ipsec.ike.exceptions.InvalidMessageIdException;
+import android.net.ipsec.ike.exceptions.InvalidSelectorsException;
+import android.net.ipsec.ike.exceptions.InvalidSyntaxException;
+import android.net.ipsec.ike.exceptions.NoAdditionalSasException;
+import android.net.ipsec.ike.exceptions.NoValidProposalChosenException;
+import android.net.ipsec.ike.exceptions.SinglePairRequiredException;
+import android.net.ipsec.ike.exceptions.TemporaryFailureException;
+import android.net.ipsec.ike.exceptions.TsUnacceptableException;
+import android.net.ipsec.ike.exceptions.UnrecognizedIkeProtocolException;
+import android.net.ipsec.ike.exceptions.UnsupportedCriticalPayloadException;
 import android.util.ArraySet;
 import android.util.SparseArray;
 
@@ -139,6 +139,18 @@ public final class IkeNotifyPayload extends IkeInformationalPayload {
      * the request/response of IKE_AUTH exchange.
      */
     public static final int NOTIFY_TYPE_MOBIKE_SUPPORTED = 16396;
+    /**
+     * Used for notifying the Responder that an address change has occurred during a MOBIKE-enabled
+     * IKE Session. Only allowed in Informational exchanges sent after the IKE_AUTH exchange has
+     * finished.
+     */
+    public static final int NOTIFY_TYPE_UPDATE_SA_ADDRESSES = 16400;
+
+    /**
+     * Used in any INFORMATIONAL request for return routability check purposes when performing
+     * MOBIKE.
+     */
+    public static final int NOTIFY_TYPE_COOKIE2 = 16401;
 
     /** Indicates that the sender prefers to use only eap based authentication */
     public static final int NOTIFY_TYPE_EAP_ONLY_AUTHENTICATION = 16417;
@@ -158,6 +170,9 @@ public final class IkeNotifyPayload extends IkeInformationalPayload {
     private static final int ERROR_NOTIFY_TYPE_MAX = 16383;
 
     private static final String NAT_DETECTION_DIGEST_ALGORITHM = "SHA-1";
+
+    private static final int COOKIE2_DATA_LEN_MIN = 8;
+    private static final int COOKIE2_DATA_LEN_MAX = 64;
 
     private static final Set<Integer> VALID_NOTIFY_TYPES_FOR_EXISTING_CHILD_SA;
     private static final Set<Integer> VALID_NOTIFY_TYPES_FOR_NEW_CHILD_SA;
@@ -219,6 +234,8 @@ public final class IkeNotifyPayload extends IkeInformationalPayload {
         NOTIFY_TYPE_TO_STRING.put(
                 NOTIFY_TYPE_ESP_TFC_PADDING_NOT_SUPPORTED, "ESP TCP Padding not supported");
         NOTIFY_TYPE_TO_STRING.put(NOTIFY_TYPE_MOBIKE_SUPPORTED, "MOBIKE supported");
+        NOTIFY_TYPE_TO_STRING.put(NOTIFY_TYPE_UPDATE_SA_ADDRESSES, "UPDATE_SA_ADDRESSES");
+        NOTIFY_TYPE_TO_STRING.put(NOTIFY_TYPE_COOKIE2, "COOKIE2");
         NOTIFY_TYPE_TO_STRING.put(
                 NOTIFY_TYPE_IKEV2_FRAGMENTATION_SUPPORTED, "Fragmentation supported");
         NOTIFY_TYPE_TO_STRING.put(
@@ -329,6 +346,18 @@ public final class IkeNotifyPayload extends IkeInformationalPayload {
             throw new ProviderException(
                     "Failed to obtain algorithm :" + NAT_DETECTION_DIGEST_ALGORITHM, e);
         }
+    }
+
+    /** Validate inbound Cookie2 request and build a response Cookie2 notify payload */
+    public static IkeNotifyPayload handleCookie2AndGenerateResponse(IkeNotifyPayload cookie2Notify)
+            throws InvalidSyntaxException {
+        byte[] notifyData = cookie2Notify.notifyData;
+        if (notifyData.length < COOKIE2_DATA_LEN_MIN || notifyData.length > COOKIE2_DATA_LEN_MAX) {
+            throw new InvalidSyntaxException(
+                    "Invalid COOKIE2 notification data with length " + notifyData.length);
+        }
+
+        return new IkeNotifyPayload(NOTIFY_TYPE_COOKIE2, notifyData);
     }
 
     /**
