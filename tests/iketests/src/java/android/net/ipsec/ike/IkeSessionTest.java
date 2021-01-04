@@ -16,6 +16,8 @@
 
 package android.net.ipsec.ike;
 
+import static android.net.ipsec.ike.IkeSessionParams.IKE_OPTION_MOBIKE;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -49,6 +51,7 @@ public final class IkeSessionTest extends IkeSessionTestBase {
     private IkeSessionCallback mMockIkeSessionCb;
     private ChildSessionCallback mMockChildSessionCb;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -64,14 +67,17 @@ public final class IkeSessionTest extends IkeSessionTestBase {
 
 
     private IkeSessionParams buildIkeSessionParams() throws Exception {
+        return buildIkeSessionParamsBase().build();
+    }
+
+    private IkeSessionParams.Builder buildIkeSessionParamsBase() throws Exception {
         return new IkeSessionParams.Builder(mMockConnectManager)
                 .setServerHostname(REMOTE_ADDRESS.getHostAddress())
                 .addSaProposal(IkeSessionStateMachineTest.buildSaProposal())
                 .setLocalIdentification(new IkeIpv4AddrIdentification((Inet4Address) LOCAL_ADDRESS))
                 .setRemoteIdentification(
                         new IkeIpv4AddrIdentification((Inet4Address) REMOTE_ADDRESS))
-                .setAuthPsk(new byte[0] /* psk, unused */)
-                .build();
+                .setAuthPsk(new byte[0] /* psk, unused */);
     }
 
     @Test
@@ -178,5 +184,19 @@ public final class IkeSessionTest extends IkeSessionTestBase {
         } catch (Exception expected) {
 
         }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testThrowWhenSetupMobikeWithTransport() throws Exception {
+        IkeSession ikeSession =
+                new IkeSession(
+                        new TestLooper().getLooper(),
+                        mSpyContext,
+                        mIpSecManager,
+                        buildIkeSessionParamsBase().addIkeOption(IKE_OPTION_MOBIKE).build(),
+                        mock(TransportModeChildSessionParams.class),
+                        mUserCbExecutor,
+                        mMockIkeSessionCb,
+                        mMockChildSessionCb);
     }
 }

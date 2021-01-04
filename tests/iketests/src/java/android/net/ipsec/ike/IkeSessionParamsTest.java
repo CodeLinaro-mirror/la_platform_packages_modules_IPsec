@@ -21,8 +21,8 @@ import static android.net.ipsec.ike.IkeSessionParams.IKE_HARD_LIFETIME_SEC_DEFAU
 import static android.net.ipsec.ike.IkeSessionParams.IKE_HARD_LIFETIME_SEC_MAXIMUM;
 import static android.net.ipsec.ike.IkeSessionParams.IKE_HARD_LIFETIME_SEC_MINIMUM;
 import static android.net.ipsec.ike.IkeSessionParams.IKE_OPTION_ACCEPT_ANY_REMOTE_ID;
-import static android.net.ipsec.ike.IkeSessionParams.IKE_RETRANS_TIMEOUT_MS_LIST_DEFAULT;
 import static android.net.ipsec.ike.IkeSessionParams.IKE_OPTION_EAP_ONLY_AUTH;
+import static android.net.ipsec.ike.IkeSessionParams.IKE_RETRANS_TIMEOUT_MS_LIST_DEFAULT;
 import static android.net.ipsec.ike.IkeSessionParams.IKE_SOFT_LIFETIME_SEC_DEFAULT;
 import static android.net.ipsec.ike.IkeSessionParams.IkeAuthConfig;
 import static android.net.ipsec.ike.IkeSessionParams.IkeAuthDigitalSignLocalConfig;
@@ -40,6 +40,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -49,6 +50,9 @@ import android.net.ConnectivityManager;
 import android.net.InetAddresses;
 import android.net.Network;
 import android.net.eap.EapSessionConfig;
+import android.net.ipsec.ike.ike3gpp.Ike3gppExtension;
+import android.net.ipsec.ike.ike3gpp.Ike3gppExtension.Ike3gppCallback;
+import android.net.ipsec.ike.ike3gpp.Ike3gppParams;
 import android.telephony.TelephonyManager;
 import android.util.SparseArray;
 
@@ -62,7 +66,7 @@ import java.net.Inet6Address;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
-import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAKey;
 import java.util.concurrent.TimeUnit;
 
 public final class IkeSessionParamsTest {
@@ -76,18 +80,21 @@ public final class IkeSessionParamsTest {
     private static final String REMOTE_HOSTNAME = "server.test.android.net";
 
     private static final Inet4Address LOCAL_IPV4_ADDRESS =
-            (Inet4Address) (InetAddresses.parseNumericAddress(LOCAL_IPV4_HOST_ADDRESS));
+            (Inet4Address) InetAddresses.parseNumericAddress(LOCAL_IPV4_HOST_ADDRESS);
     private static final Inet4Address REMOTE_IPV4_ADDRESS =
-            (Inet4Address) (InetAddresses.parseNumericAddress(REMOTE_IPV4_HOST_ADDRESS));
+            (Inet4Address) InetAddresses.parseNumericAddress(REMOTE_IPV4_HOST_ADDRESS);
 
     private static final Inet4Address PCSCF_IPV4_ADDRESS_1 =
-            (Inet4Address) (InetAddresses.parseNumericAddress("192.0.2.1"));
+            (Inet4Address) InetAddresses.parseNumericAddress("192.0.2.1");
     private static final Inet4Address PCSCF_IPV4_ADDRESS_2 =
-            (Inet4Address) (InetAddresses.parseNumericAddress("192.0.2.2"));
+            (Inet4Address) InetAddresses.parseNumericAddress("192.0.2.2");
     private static final Inet6Address PCSCF_IPV6_ADDRESS_1 =
-            (Inet6Address) (InetAddresses.parseNumericAddress("2001:DB8::1"));
+            (Inet6Address) InetAddresses.parseNumericAddress("2001:DB8::1");
     private static final Inet6Address PCSCF_IPV6_ADDRESS_2 =
-            (Inet6Address) (InetAddresses.parseNumericAddress("2001:DB8::2"));
+            (Inet6Address) InetAddresses.parseNumericAddress("2001:DB8::2");
+
+    private static final String EAP_MSCHAP_V2_USERNAME = "username";
+    private static final String EAP_MSCHAP_V2_PASSWORD = "password";
 
     private ConnectivityManager mMockConnectManager;
     private Network mMockDefaultNetwork;
@@ -97,9 +104,11 @@ public final class IkeSessionParamsTest {
     private IkeIdentification mLocalIdentification;
     private IkeIdentification mRemoteIdentification;
 
+    private interface TestRSAPrivateKey extends PrivateKey, RSAKey {}
+
     private X509Certificate mMockServerCaCert;
     private X509Certificate mMockClientEndCert;
-    private PrivateKey mMockRsaPrivateKey;
+    private TestRSAPrivateKey mMockRsaPrivateKey;
 
     @Before
     public void setUp() throws Exception {
@@ -121,7 +130,7 @@ public final class IkeSessionParamsTest {
 
         mMockServerCaCert = mock(X509Certificate.class);
         mMockClientEndCert = mock(X509Certificate.class);
-        mMockRsaPrivateKey = mock(RSAPrivateKey.class);
+        mMockRsaPrivateKey = mock(TestRSAPrivateKey.class);
     }
 
     private void verifyIkeParamsWithSeverIpAndDefaultValues(IkeSessionParams sessionParams) {
@@ -174,6 +183,7 @@ public final class IkeSessionParamsTest {
         verifyAuthPskConfig(sessionParams);
 
         assertEquals(mMockDefaultNetwork, sessionParams.getNetwork());
+        assertNull(sessionParams.getConfiguredNetwork());
 
         assertEquals(IKE_HARD_LIFETIME_SEC_DEFAULT, sessionParams.getHardLifetimeSeconds());
         assertEquals(IKE_SOFT_LIFETIME_SEC_DEFAULT, sessionParams.getSoftLifetimeSeconds());
@@ -358,6 +368,7 @@ public final class IkeSessionParamsTest {
 
         verifyIkeParamsWithSeverIpAndDefaultValues(sessionParams);
         assertEquals(mMockDefaultNetwork, sessionParams.getNetwork());
+        assertNull(sessionParams.getConfiguredNetwork());
 
         IkeAuthConfig localConfig = sessionParams.getLocalAuthConfig();
         assertTrue(localConfig instanceof IkeAuthEapConfig);
@@ -387,6 +398,7 @@ public final class IkeSessionParamsTest {
 
         verifyIkeParamsWithSeverIpAndDefaultValues(sessionParams);
         assertEquals(mMockUserConfigNetwork, sessionParams.getNetwork());
+        assertEquals(mMockUserConfigNetwork, sessionParams.getConfiguredNetwork());
 
         IkeAuthConfig localConfig = sessionParams.getLocalAuthConfig();
         assertTrue(localConfig instanceof IkeAuthDigitalSignLocalConfig);
@@ -589,10 +601,11 @@ public final class IkeSessionParamsTest {
     @Test
     public void testExceptionOnEapOnlyOptionWithEapOnlyUnsafeMethod() throws Exception {
         try {
-            EapSessionConfig eapSessionConfig = new EapSessionConfig.Builder()
-                    .setEapMsChapV2Config(null, null)
-                    .setEapAkaConfig(0, 0)
-                    .build();
+            EapSessionConfig eapSessionConfig =
+                    new EapSessionConfig.Builder()
+                            .setEapMsChapV2Config(EAP_MSCHAP_V2_USERNAME, EAP_MSCHAP_V2_PASSWORD)
+                            .setEapAkaConfig(0, 0)
+                            .build();
 
             IkeSessionParams sessionParams =
                     buildWithPskCommon(REMOTE_IPV4_HOST_ADDRESS)
@@ -621,5 +634,18 @@ public final class IkeSessionParamsTest {
         assertTrue(sessionParams.hasIkeOption(IKE_OPTION_EAP_ONLY_AUTH));
         IkeAuthConfig localConfig = sessionParams.getLocalAuthConfig();
         assertTrue(localConfig instanceof IkeAuthEapConfig);
+    }
+
+    @Test
+    public void testBuildWithIke3gppExtension() throws Exception {
+        Ike3gppExtension ike3gppExtension =
+                new Ike3gppExtension(
+                        new Ike3gppParams.Builder().build(), mock(Ike3gppCallback.class));
+
+        IkeSessionParams sessionParams =
+                buildWithPskCommon(REMOTE_IPV4_HOST_ADDRESS)
+                        .setIke3gppExtension(ike3gppExtension)
+                        .build();
+        assertEquals(ike3gppExtension, sessionParams.getIke3gppExtension());
     }
 }

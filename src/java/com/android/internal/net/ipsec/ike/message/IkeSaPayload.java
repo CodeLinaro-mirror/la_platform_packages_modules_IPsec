@@ -31,12 +31,12 @@ import android.net.ipsec.ike.ChildSaProposal;
 import android.net.ipsec.ike.IkeSaProposal;
 import android.net.ipsec.ike.SaProposal;
 import android.net.ipsec.ike.exceptions.IkeProtocolException;
+import android.net.ipsec.ike.exceptions.protocol.InvalidSyntaxException;
+import android.net.ipsec.ike.exceptions.protocol.NoValidProposalChosenException;
 import android.util.ArraySet;
 import android.util.Pair;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.internal.net.ipsec.ike.exceptions.InvalidSyntaxException;
-import com.android.internal.net.ipsec.ike.exceptions.NoValidProposalChosenException;
 import com.android.internal.net.ipsec.ike.utils.IkeSecurityParameterIndex;
 import com.android.internal.net.ipsec.ike.utils.IkeSpiGenerator;
 import com.android.internal.net.ipsec.ike.utils.IpSecSpiGenerator;
@@ -1230,6 +1230,8 @@ public final class IkeSaPayload extends IkePayload {
         private void validateKeyLength() throws InvalidSyntaxException {
             switch (id) {
                 case SaProposal.ENCRYPTION_ALGORITHM_3DES:
+                    /* fall through */
+                case SaProposal.ENCRYPTION_ALGORITHM_CHACHA20_POLY1305:
                     if (mSpecifiedKeyLength != KEY_LEN_UNSPECIFIED) {
                         throw new InvalidSyntaxException(
                                 "Must not set Key Length value for this "
@@ -1239,6 +1241,8 @@ public final class IkeSaPayload extends IkePayload {
                     }
                     return;
                 case SaProposal.ENCRYPTION_ALGORITHM_AES_CBC:
+                    /* fall through */
+                case SaProposal.ENCRYPTION_ALGORITHM_AES_CTR:
                     /* fall through */
                 case SaProposal.ENCRYPTION_ALGORITHM_AES_GCM_8:
                     /* fall through */

@@ -33,13 +33,18 @@ java_sdk_library {
     libs: [
         "unsupportedappusage",
         "framework-annotations-lib",
-        "framework-telephony-stubs",
+        "conscrypt.module.public.api",
     ],
 
     api_packages: [
         "android.net.eap",
         "android.net.ipsec.ike",
         "android.net.ipsec.ike.exceptions",
+        "android.net.ipsec.ike.ike3gpp",
+    ],
+
+    hidden_api_packages: [
+        "com.android.internal.net",
     ],
 
     // Shared filegroups of BouncyCastle and frameworks are jar-jar'ed to avoid
@@ -51,8 +56,6 @@ java_sdk_library {
         "com.android.ipsec",
         "test_com.android.ipsec",
     ],
-
-    stubs_library_visibility: ["//visibility:public"],
 }
 
 filegroup {
@@ -67,6 +70,11 @@ filegroup {
     name: "ike-api-srcs",
     srcs: ["src/java/android/**/*.java"],
     path: "src/java/",
+}
+
+filegroup {
+    name: "ike-aes-xcbc",
+    srcs: ["src/java/**/AesXCbcImpl.java"],
 }
 
 // Provides internal classes needed to build the ike sources.

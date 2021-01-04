@@ -29,6 +29,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.eap.EapSessionConfig;
+import android.net.ipsec.ike.ike3gpp.Ike3gppExtension;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.net.ipsec.ike.message.IkeConfigPayload.ConfigAttributeIpv4Pcscf;
@@ -44,7 +45,7 @@ import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,7 +79,7 @@ public final class IkeSessionParams {
 
     /** @hide */
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({IKE_OPTION_ACCEPT_ANY_REMOTE_ID, IKE_OPTION_EAP_ONLY_AUTH})
+    @IntDef({IKE_OPTION_ACCEPT_ANY_REMOTE_ID, IKE_OPTION_EAP_ONLY_AUTH, IKE_OPTION_MOBIKE})
     public @interface IkeOption {}
 
     /**
@@ -95,9 +96,24 @@ public final class IkeSessionParams {
      * <p>@see {@link Builder#setAuthEap(X509Certificate, EapSessionConfig)}
      */
     public static final int IKE_OPTION_EAP_ONLY_AUTH = 1;
+    /**
+     * If set, the IKE library will attempt to enable MOBIKE for the resulting IKE Session.
+     *
+     * <p>Use of MOBIKE in the IKE Session requires the peer to also support MOBIKE.
+     *
+     * <p>If this option is set for an IKE Session, Transport-mode SAs will not be allowed in that
+     * Session.
+     *
+     * <p>Checking for MOBIKE use in an IKE Session is done via {@link
+     * IkeSessionConfiguration#isIkeExtensionEnabled}.
+     *
+     * @hide
+     */
+    // TODO(b/170770939): update javadoc scoping to SDK S+
+    public static final int IKE_OPTION_MOBIKE = 2;
 
     private static final int MIN_IKE_OPTION = IKE_OPTION_ACCEPT_ANY_REMOTE_ID;
-    private static final int MAX_IKE_OPTION = IKE_OPTION_EAP_ONLY_AUTH;
+    private static final int MAX_IKE_OPTION = IKE_OPTION_MOBIKE;
 
     /** @hide */
     @VisibleForTesting static final int IKE_HARD_LIFETIME_SEC_MINIMUM = 300; // 5 minutes
@@ -136,6 +152,7 @@ public final class IkeSessionParams {
 
     @NonNull private final String mServerHostname;
     @NonNull private final Network mNetwork;
+    @Nullable private final Network mCallerConfiguredNetwork;
 
     @NonNull private final IkeSaProposal[] mSaProposals;
 
@@ -149,6 +166,8 @@ public final class IkeSessionParams {
 
     @NonNull private final int[] mRetransTimeoutMsList;
 
+    @Nullable private final Ike3gppExtension mIke3gppExtension;
+
     private final long mIkeOptions;
 
     private final int mHardLifetimeSec;
@@ -161,6 +180,7 @@ public final class IkeSessionParams {
     private IkeSessionParams(
             @NonNull String serverHostname,
             @NonNull Network network,
+            @NonNull Network callerConfiguredNetwork,
             @NonNull IkeSaProposal[] proposals,
             @NonNull IkeIdentification localIdentification,
             @NonNull IkeIdentification remoteIdentification,
@@ -168,6 +188,7 @@ public final class IkeSessionParams {
             @NonNull IkeAuthConfig remoteAuthConfig,
             @NonNull IkeConfigAttribute[] configRequests,
             @NonNull int[] retransTimeoutMsList,
+            @Nullable Ike3gppExtension ike3gppExtension,
             long ikeOptions,
             int hardLifetimeSec,
             int softLifetimeSec,
@@ -175,6 +196,7 @@ public final class IkeSessionParams {
             boolean isIkeFragmentationSupported) {
         mServerHostname = serverHostname;
         mNetwork = network;
+        mCallerConfiguredNetwork = callerConfiguredNetwork;
 
         mSaProposals = proposals;
 
@@ -187,6 +209,8 @@ public final class IkeSessionParams {
         mConfigRequests = configRequests;
 
         mRetransTimeoutMsList = retransTimeoutMsList;
+
+        mIke3gppExtension = ike3gppExtension;
 
         mIkeOptions = ikeOptions;
 
@@ -218,7 +242,31 @@ public final class IkeSessionParams {
         return mServerHostname;
     }
 
-    /** Retrieves the configured {@link Network} */
+    // TODO: b/151984042 Keep #getNetwork @SystemApi and make #getConfiguredNetwork public
+
+    /**
+     * Retrieves the configured {@link Network}, or null if not configured
+     *
+     * <p>This is the initially-configured Network (with MOBIKE, the caller may later specify a new
+     * Network and that update will not persist to here).
+     *
+     * @hide
+     */
+    @Nullable
+    public Network getConfiguredNetwork() {
+        return mCallerConfiguredNetwork;
+    }
+
+    /**
+     * Retrieves the configured or default {@link Network}
+     *
+     * <p>If caller did not set any Network, this method will return the default Network resolved in
+     * {@link IkeSessionParams.Builder#build()}. The return value of this method is only
+     * informational because if MOBIKE is enabled, IKE Session may switch to a different default
+     * Network.
+     *
+     * <p>This is method will be deprecated. Callers should use {@link #getConfiguredNetwork}
+     */
     @NonNull
     public Network getNetwork() {
         return mNetwork;
@@ -288,6 +336,12 @@ public final class IkeSessionParams {
      */
     public int[] getRetransmissionTimeoutsMillis() {
         return mRetransTimeoutMsList;
+    }
+
+    /** Retrieves the configured Ike3gppExtension, or null if it was not set. */
+    @Nullable
+    public Ike3gppExtension getIke3gppExtension() {
+        return mIke3gppExtension;
     }
 
     /** Checks if the given IKE Session negotiation option is set */
@@ -494,13 +548,15 @@ public final class IkeSessionParams {
                         IKE_RETRANS_TIMEOUT_MS_LIST_DEFAULT.length);
 
         @NonNull private String mServerHostname;
-        @Nullable private Network mNetwork;
+        @Nullable private Network mCallerConfiguredNetwork;
 
         @Nullable private IkeIdentification mLocalIdentification;
         @Nullable private IkeIdentification mRemoteIdentification;
 
         @Nullable private IkeAuthConfig mLocalAuthConfig;
         @Nullable private IkeAuthConfig mRemoteAuthConfig;
+
+        @Nullable private Ike3gppExtension mIke3gppExtension;
 
         private long mIkeOptions = 0;
 
@@ -548,6 +604,25 @@ public final class IkeSessionParams {
          *
          * @param network the {@link Network} that IKE Session will use.
          * @return Builder this, to facilitate chaining.
+         * @hide
+         */
+        @NonNull
+        public Builder setConfiguredNetwork(@NonNull Network network) {
+            return setNetwork(network);
+        }
+
+        // TODO: b/151984042 Keep #setNetwork @SystemApi and make #setConfiguredNetwork public
+
+        /**
+         * Sets the {@link Network} for the {@link IkeSessionParams} being built.
+         *
+         * <p>If no {@link Network} is provided, the default Network (as per {@link
+         * ConnectivityManager#getActiveNetwork()}) will be used.
+         *
+         * <p>This is method will be deprecated. Callers should use {@link #setConfiguredNetwork}
+         *
+         * @param network the {@link Network} that IKE Session will use.
+         * @return Builder this, to facilitate chaining.
          */
         @NonNull
         public Builder setNetwork(@NonNull Network network) {
@@ -555,7 +630,7 @@ public final class IkeSessionParams {
                 throw new NullPointerException("Required argument not provided");
             }
 
-            mNetwork = network;
+            mCallerConfiguredNetwork = network;
             return this;
         }
 
@@ -703,8 +778,8 @@ public final class IkeSessionParams {
          *     truststore is considered acceptable.
          * @param clientEndCert the end certificate for remote server to verify the locally
          *     generated signature.
-         * @param clientPrivateKey private key to generate outbound digital signature. Only {@link
-         *     RSAPrivateKey} is supported.
+         * @param clientPrivateKey private key to generate outbound digital signature. The {@link
+         *     PrivateKey} MUST be an instance of {@link RSAKey}.
          * @return Builder this, to facilitate chaining.
          */
         @NonNull
@@ -737,8 +812,8 @@ public final class IkeSessionParams {
          *     signature.
          * @param clientIntermediateCerts intermediate certificates for the remote server to
          *     validate the end certificate.
-         * @param clientPrivateKey private key to generate outbound digital signature. Only {@link
-         *     RSAPrivateKey} is supported.
+         * @param clientPrivateKey private key to generate outbound digital signature. The {@link
+         *     PrivateKey} MUST be an instance of {@link RSAKey}.
          * @return Builder this, to facilitate chaining.
          */
         @NonNull
@@ -753,7 +828,7 @@ public final class IkeSessionParams {
                 throw new NullPointerException("Required argument not provided");
             }
 
-            if (!(clientPrivateKey instanceof RSAPrivateKey)) {
+            if (!(clientPrivateKey instanceof RSAKey)) {
                 throw new IllegalArgumentException("Unsupported private key type");
             }
 
@@ -894,6 +969,25 @@ public final class IkeSessionParams {
         }
 
         /**
+         * Sets the parameters to be used for 3GPP-specific behavior during the IKE Session.
+         *
+         * <p>Setting the Ike3gppExtension also enables support for non-configurable payloads, such
+         * as the Notify - BACKOFF_TIMER payload.
+         *
+         * @see 3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP
+         *     access networks
+         * @param ike3gppExtension the Ike3gppExtension to use for this IKE Session.
+         * @return Builder this, to facilitate chaining.
+         */
+        @NonNull
+        public Builder setIke3gppExtension(@NonNull Ike3gppExtension ike3gppExtension) {
+            Objects.requireNonNull(ike3gppExtension, "ike3gppExtension must not be null");
+
+            mIke3gppExtension = ike3gppExtension;
+            return this;
+        }
+
+        /**
          * Sets the specified IKE Option as enabled.
          *
          * @param ikeOption the option to be enabled.
@@ -930,7 +1024,10 @@ public final class IkeSessionParams {
                 throw new IllegalArgumentException("IKE SA proposal not found");
             }
 
-            Network network = mNetwork != null ? mNetwork : mConnectivityManager.getActiveNetwork();
+            Network network =
+                    mCallerConfiguredNetwork != null
+                            ? mCallerConfiguredNetwork
+                            : mConnectivityManager.getActiveNetwork();
             if (network == null) {
                 throw new IllegalArgumentException("Network not found");
             }
@@ -967,6 +1064,7 @@ public final class IkeSessionParams {
             return new IkeSessionParams(
                     mServerHostname,
                     network,
+                    mCallerConfiguredNetwork,
                     mSaProposalList.toArray(new IkeSaProposal[0]),
                     mLocalIdentification,
                     mRemoteIdentification,
@@ -974,6 +1072,7 @@ public final class IkeSessionParams {
                     mRemoteAuthConfig,
                     mConfigRequestList.toArray(new IkeConfigAttribute[0]),
                     mRetransTimeoutMsList,
+                    mIke3gppExtension,
                     mIkeOptions,
                     mHardLifetimeSec,
                     mSoftLifetimeSec,

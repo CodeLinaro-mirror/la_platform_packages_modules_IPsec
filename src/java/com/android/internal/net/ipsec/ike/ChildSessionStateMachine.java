@@ -62,6 +62,11 @@ import android.net.ipsec.ike.TunnelModeChildSessionParams;
 import android.net.ipsec.ike.exceptions.IkeException;
 import android.net.ipsec.ike.exceptions.IkeInternalException;
 import android.net.ipsec.ike.exceptions.IkeProtocolException;
+import android.net.ipsec.ike.exceptions.protocol.InvalidKeException;
+import android.net.ipsec.ike.exceptions.protocol.InvalidSyntaxException;
+import android.net.ipsec.ike.exceptions.protocol.NoValidProposalChosenException;
+import android.net.ipsec.ike.exceptions.protocol.TemporaryFailureException;
+import android.net.ipsec.ike.exceptions.protocol.TsUnacceptableException;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.Message;
@@ -76,11 +81,6 @@ import com.android.internal.net.ipsec.ike.SaRecord.SaLifetimeAlarmScheduler;
 import com.android.internal.net.ipsec.ike.crypto.IkeCipher;
 import com.android.internal.net.ipsec.ike.crypto.IkeMacIntegrity;
 import com.android.internal.net.ipsec.ike.crypto.IkeMacPrf;
-import com.android.internal.net.ipsec.ike.exceptions.InvalidKeException;
-import com.android.internal.net.ipsec.ike.exceptions.InvalidSyntaxException;
-import com.android.internal.net.ipsec.ike.exceptions.NoValidProposalChosenException;
-import com.android.internal.net.ipsec.ike.exceptions.TemporaryFailureException;
-import com.android.internal.net.ipsec.ike.exceptions.TsUnacceptableException;
 import com.android.internal.net.ipsec.ike.message.IkeConfigPayload;
 import com.android.internal.net.ipsec.ike.message.IkeConfigPayload.ConfigAttribute;
 import com.android.internal.net.ipsec.ike.message.IkeDeletePayload;
@@ -2246,6 +2246,9 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
                         break;
                     case IkeNotifyPayload.NOTIFY_TYPE_ESP_TFC_PADDING_NOT_SUPPORTED:
                         // Ignore
+                        break;
+                    case IkeNotifyPayload.NOTIFY_TYPE_REKEY_SA:
+                        // Handled in Rekey State. Ignore here.
                         break;
                     default:
                         // Unknown and unexpected status notifications are ignored as per RFC7296.

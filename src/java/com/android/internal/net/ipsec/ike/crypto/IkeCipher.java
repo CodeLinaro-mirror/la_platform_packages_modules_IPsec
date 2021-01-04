@@ -35,24 +35,46 @@ import javax.crypto.NoSuchPaddingException;
  */
 public abstract class IkeCipher extends IkeCrypto {
     private static final int KEY_LEN_3DES = 24;
+    private static final int KEY_LEN_CHACHA20_POLY1305 = 32;
 
     private static final int IV_LEN_3DES = 8;
     private static final int IV_LEN_AES_CBC = 16;
+    private static final int IV_LEN_AES_CTR = 8;
     private static final int IV_LEN_AES_GCM = 8;
+    private static final int IV_LEN_CHACHA20_POLY1305 = 8;
+
+    private static final int SALT_LEN_AES_GCM = 4;
+    private static final int SALT_LEN_AES_CTR = 4;
+    private static final int SALT_LEN_AES_CHACHA20_POLY1305 = 4;
+
+    private static final int BLOCK_SIZE_CHACHA_POLY = 4;
+
+    protected static final int SALT_LEN_NOT_INCLUDED = 0;
+    protected static final int BLOCK_SIZE_NOT_SPECIFIED = 0;
 
     private final boolean mIsAead;
     private final int mIvLen;
+    private final int mBlockSize;
 
+    protected final int mSaltLen;
     protected final Cipher mCipher;
 
     protected IkeCipher(
-            int algorithmId, int keyLength, int ivLength, String algorithmName, boolean isAead) {
+            int algorithmId,
+            int keyLength,
+            int ivLength,
+            String algorithmName,
+            boolean isAead,
+            int saltLen,
+            int blockSize) {
         super(algorithmId, keyLength, algorithmName);
         mIvLen = ivLength;
         mIsAead = isAead;
+        mSaltLen = saltLen;
 
         try {
             mCipher = Cipher.getInstance(getAlgorithmName());
+            mBlockSize = blockSize == BLOCK_SIZE_NOT_SPECIFIED ? mCipher.getBlockSize() : blockSize;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             throw new IllegalArgumentException("Failed to construct " + getTypeString(), e);
         }
@@ -79,6 +101,13 @@ public abstract class IkeCipher extends IkeCrypto {
                         encryptionTransform.getSpecifiedKeyLength() / 8,
                         IV_LEN_AES_CBC,
                         "AES/CBC/NoPadding");
+            case SaProposal.ENCRYPTION_ALGORITHM_AES_CTR:
+                return new IkeNormalModeCipher(
+                        algorithmId,
+                        encryptionTransform.getSpecifiedKeyLength() / 8,
+                        IV_LEN_AES_CTR,
+                        "AES/CTR/NoPadding",
+                        SALT_LEN_AES_CTR);
             case SaProposal.ENCRYPTION_ALGORITHM_AES_GCM_8:
                 // Fall through
             case SaProposal.ENCRYPTION_ALGORITHM_AES_GCM_12:
@@ -89,7 +118,16 @@ public abstract class IkeCipher extends IkeCrypto {
                         algorithmId,
                         encryptionTransform.getSpecifiedKeyLength() / 8,
                         IV_LEN_AES_GCM,
-                        "AES/GCM/NoPadding");
+                        "AES/GCM/NoPadding",
+                        SALT_LEN_AES_GCM);
+            case SaProposal.ENCRYPTION_ALGORITHM_CHACHA20_POLY1305:
+                return new IkeCombinedModeCipher(
+                        algorithmId,
+                        KEY_LEN_CHACHA20_POLY1305,
+                        IV_LEN_CHACHA20_POLY1305,
+                        "ChaCha20/Poly1305/NoPadding",
+                        SALT_LEN_AES_CHACHA20_POLY1305,
+                        BLOCK_SIZE_CHACHA_POLY);
             default:
                 throw new IllegalArgumentException(
                         "Unrecognized Encryption Algorithm ID: " + algorithmId);
@@ -111,9 +149,7 @@ public abstract class IkeCipher extends IkeCrypto {
      * @return the block size (in bytes).
      */
     public int getBlockSize() {
-        // Currently all supported encryption algorithms are block ciphers. So the return value will
-        // not be zero.
-        return mCipher.getBlockSize();
+        return mBlockSize;
     }
 
     /**
@@ -144,6 +180,11 @@ public abstract class IkeCipher extends IkeCrypto {
                             + " Received key with length of : "
                             + key.length);
         }
+    }
+
+    @Override
+    public int getKeyLength() {
+        return super.getKeyLength() + mSaltLen;
     }
 
     /**

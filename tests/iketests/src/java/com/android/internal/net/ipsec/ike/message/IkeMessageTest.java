@@ -46,14 +46,14 @@ import static org.mockito.Mockito.when;
 
 import android.net.ipsec.ike.exceptions.IkeException;
 import android.net.ipsec.ike.exceptions.IkeInternalException;
+import android.net.ipsec.ike.exceptions.protocol.InvalidMessageIdException;
+import android.net.ipsec.ike.exceptions.protocol.InvalidSyntaxException;
+import android.net.ipsec.ike.exceptions.protocol.UnsupportedCriticalPayloadException;
 
 import com.android.internal.net.TestUtils;
 import com.android.internal.net.ipsec.ike.SaRecord.IkeSaRecord;
 import com.android.internal.net.ipsec.ike.crypto.IkeMacIntegrity;
 import com.android.internal.net.ipsec.ike.crypto.IkeNormalModeCipher;
-import com.android.internal.net.ipsec.ike.exceptions.InvalidMessageIdException;
-import com.android.internal.net.ipsec.ike.exceptions.InvalidSyntaxException;
-import com.android.internal.net.ipsec.ike.exceptions.UnsupportedCriticalPayloadException;
 import com.android.internal.net.ipsec.ike.message.IkeMessage.DecodeResult;
 import com.android.internal.net.ipsec.ike.message.IkeMessage.DecodeResultError;
 import com.android.internal.net.ipsec.ike.message.IkeMessage.DecodeResultOk;
@@ -66,8 +66,8 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 
 import javax.crypto.IllegalBlockSizeException;
 
@@ -193,7 +193,7 @@ public final class IkeMessageTest {
         IkePayload.PAYLOAD_TYPE_VENDOR
     };
 
-    class TestIkeSupportedPayload extends IkePayload {
+    static class TestIkeSupportedPayload extends IkePayload {
         TestIkeSupportedPayload(int payload, boolean critical) {
             super(payload, critical);
         }
@@ -348,7 +348,7 @@ public final class IkeMessageTest {
                 IkeTestUtils.decodeAndVerifyUnprotectedErrorMsg(
                         inputPacket, UnsupportedCriticalPayloadException.class);
 
-        assertEquals(1, exception.payloadTypeList.size());
+        assertEquals(1, exception.getUnsupportedCriticalPayloadList().size());
     }
 
     @Test
@@ -520,7 +520,7 @@ public final class IkeMessageTest {
                         true /*isResp*/,
                         true /*fromInit*/,
                         0);
-        IkeMessage ikeMessage = new IkeMessage(ikeHeader, new LinkedList<>());
+        IkeMessage ikeMessage = new IkeMessage(ikeHeader, new ArrayList<>());
 
         byte[][] ikeMessageBytes =
                 ikeMessage.encryptAndEncode(
