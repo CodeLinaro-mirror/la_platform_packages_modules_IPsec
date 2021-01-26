@@ -7,6 +7,7 @@ package android.net.eap {
     method @NonNull public byte[] getEapIdentity();
     method @Nullable public android.net.eap.EapSessionConfig.EapMsChapV2Config getEapMsChapV2Config();
     method @Nullable public android.net.eap.EapSessionConfig.EapSimConfig getEapSimConfig();
+    method @Nullable public android.net.eap.EapSessionConfig.EapTtlsConfig getEapTtlsConfig();
   }
 
   public static final class EapSessionConfig.Builder {
@@ -17,6 +18,7 @@ package android.net.eap {
     method @NonNull public android.net.eap.EapSessionConfig.Builder setEapIdentity(@NonNull byte[]);
     method @NonNull public android.net.eap.EapSessionConfig.Builder setEapMsChapV2Config(@NonNull String, @NonNull String);
     method @NonNull public android.net.eap.EapSessionConfig.Builder setEapSimConfig(int, int);
+    method @NonNull public android.net.eap.EapSessionConfig.Builder setEapTtlsConfig(@Nullable java.security.cert.X509Certificate, @NonNull android.net.eap.EapSessionConfig);
   }
 
   public static class EapSessionConfig.EapAkaConfig extends android.net.eap.EapSessionConfig.EapMethodConfig {
@@ -43,11 +45,18 @@ package android.net.eap {
     method public int getSubId();
   }
 
+  public static class EapSessionConfig.EapTtlsConfig extends android.net.eap.EapSessionConfig.EapMethodConfig {
+    method @NonNull public android.net.eap.EapSessionConfig getInnerEapSessionConfig();
+    method @Nullable public java.security.cert.X509Certificate getServerCaCert();
+  }
+
 }
 
 package android.net.ipsec.ike {
 
   public final class ChildSaProposal extends android.net.ipsec.ike.SaProposal {
+    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedEncryptionAlgorithms();
+    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedIntegrityAlgorithms();
   }
 
   public static final class ChildSaProposal.Builder {
@@ -119,6 +128,9 @@ package android.net.ipsec.ike {
 
   public final class IkeSaProposal extends android.net.ipsec.ike.SaProposal {
     method @NonNull public java.util.List<java.lang.Integer> getPseudorandomFunctions();
+    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedEncryptionAlgorithms();
+    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedIntegrityAlgorithms();
+    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedPseudorandomFunctions();
   }
 
   public static final class IkeSaProposal.Builder {
@@ -171,6 +183,7 @@ package android.net.ipsec.ike {
     method @IntRange(from=0x12c, to=0x15180) public int getHardLifetimeSeconds();
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.IkeAuthConfig getLocalAuthConfig();
     method @NonNull public android.net.ipsec.ike.IkeIdentification getLocalIdentification();
+    method @IntRange(from=0xa, to=0xe10) public int getNattKeepAliveDelaySeconds();
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.IkeAuthConfig getRemoteAuthConfig();
     method @NonNull public android.net.ipsec.ike.IkeIdentification getRemoteIdentification();
     method @NonNull public int[] getRetransmissionTimeoutsMillis();
@@ -199,6 +212,7 @@ package android.net.ipsec.ike {
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.Builder setDpdDelaySeconds(@IntRange(from=0x14, to=0x708) int);
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.Builder setLifetimeSeconds(@IntRange(from=0x12c, to=0x15180) int, @IntRange(from=0x78, to=0x15180) int);
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.Builder setLocalIdentification(@NonNull android.net.ipsec.ike.IkeIdentification);
+    method @NonNull public android.net.ipsec.ike.IkeSessionParams.Builder setNattKeepAliveDelaySeconds(@IntRange(from=0xa, to=0xe10) int);
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.Builder setRemoteIdentification(@NonNull android.net.ipsec.ike.IkeIdentification);
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.Builder setRetransmissionTimeoutsMillis(@NonNull int[]);
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.Builder setServerHostname(@NonNull String);
@@ -248,6 +262,7 @@ package android.net.ipsec.ike {
     method @NonNull public java.util.List<java.lang.Integer> getDhGroups();
     method @NonNull public java.util.List<android.util.Pair<java.lang.Integer,java.lang.Integer>> getEncryptionAlgorithms();
     method @NonNull public java.util.List<java.lang.Integer> getIntegrityAlgorithms();
+    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedDhGroups();
     field public static final int DH_GROUP_1024_BIT_MODP = 2; // 0x2
     field public static final int DH_GROUP_1536_BIT_MODP = 5; // 0x5
     field public static final int DH_GROUP_2048_BIT_MODP = 14; // 0xe
