@@ -62,11 +62,11 @@ import android.net.ipsec.ike.TunnelModeChildSessionParams;
 import android.net.ipsec.ike.exceptions.IkeException;
 import android.net.ipsec.ike.exceptions.IkeInternalException;
 import android.net.ipsec.ike.exceptions.IkeProtocolException;
-import android.net.ipsec.ike.exceptions.protocol.InvalidKeException;
-import android.net.ipsec.ike.exceptions.protocol.InvalidSyntaxException;
-import android.net.ipsec.ike.exceptions.protocol.NoValidProposalChosenException;
-import android.net.ipsec.ike.exceptions.protocol.TemporaryFailureException;
-import android.net.ipsec.ike.exceptions.protocol.TsUnacceptableException;
+import android.net.ipsec.ike.exceptions.InvalidKeException;
+import android.net.ipsec.ike.exceptions.InvalidSyntaxException;
+import android.net.ipsec.ike.exceptions.NoValidProposalChosenException;
+import android.net.ipsec.ike.exceptions.TemporaryFailureException;
+import android.net.ipsec.ike.exceptions.TsUnacceptableException;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.Message;
@@ -75,6 +75,7 @@ import android.util.SparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.net.ipsec.ike.IkeLocalRequestScheduler.ChildLocalRequest;
+import com.android.internal.net.ipsec.ike.IkeLocalRequestScheduler.LocalRequestFactory;
 import com.android.internal.net.ipsec.ike.IkeSessionStateMachine.IkeExchangeSubType;
 import com.android.internal.net.ipsec.ike.SaRecord.ChildSaRecord;
 import com.android.internal.net.ipsec.ike.SaRecord.SaLifetimeAlarmScheduler;
@@ -164,6 +165,8 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
      * collision in test mode.
      */
     private final IpSecSpiGenerator mIpSecSpiGenerator;
+
+    private final LocalRequestFactory mLocalRequestFactory = new LocalRequestFactory();
 
     /** User provided configurations. */
     @VisibleForTesting final ChildSessionParams mChildSessionParams;
@@ -989,7 +992,7 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
                         transitionTo(mInitial);
 
                         mChildSmCallback.scheduleRetryLocalRequest(
-                                new ChildLocalRequest(
+                                mLocalRequestFactory.getChildLocalRequest(
                                         CMD_LOCAL_REQUEST_CREATE_CHILD,
                                         mUserCallback,
                                         mChildSessionParams));
