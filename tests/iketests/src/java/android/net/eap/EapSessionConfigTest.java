@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package android.net.eap;
+package android.net.eap.test;
 
+import static android.net.eap.test.EapSessionConfig.EapMethodConfig.EAP_TYPE_AKA;
+import static android.net.eap.test.EapSessionConfig.EapMethodConfig.EAP_TYPE_AKA_PRIME;
+import static android.net.eap.test.EapSessionConfig.EapMethodConfig.EAP_TYPE_MSCHAP_V2;
+import static android.net.eap.test.EapSessionConfig.EapMethodConfig.EAP_TYPE_SIM;
+import static android.net.eap.test.EapSessionConfig.EapMethodConfig.EAP_TYPE_TTLS;
 import static android.telephony.TelephonyManager.APPTYPE_USIM;
-
-import static com.android.internal.net.eap.message.EapData.EAP_TYPE_AKA;
-import static com.android.internal.net.eap.message.EapData.EAP_TYPE_AKA_PRIME;
-import static com.android.internal.net.eap.message.EapData.EAP_TYPE_MSCHAP_V2;
-import static com.android.internal.net.eap.message.EapData.EAP_TYPE_SIM;
-import static com.android.internal.net.eap.message.EapData.EAP_TYPE_TTLS;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -30,15 +29,15 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.net.eap.EapSessionConfig.EapAkaConfig;
-import android.net.eap.EapSessionConfig.EapAkaPrimeConfig;
-import android.net.eap.EapSessionConfig.EapMethodConfig;
-import android.net.eap.EapSessionConfig.EapMsChapV2Config;
-import android.net.eap.EapSessionConfig.EapSimConfig;
-import android.net.eap.EapSessionConfig.EapTtlsConfig;
+import android.net.eap.test.EapSessionConfig.EapAkaConfig;
+import android.net.eap.test.EapSessionConfig.EapAkaPrimeConfig;
+import android.net.eap.test.EapSessionConfig.EapMethodConfig;
+import android.net.eap.test.EapSessionConfig.EapMsChapV2Config;
+import android.net.eap.test.EapSessionConfig.EapSimConfig;
+import android.net.eap.test.EapSessionConfig.EapTtlsConfig;
 import android.os.PersistableBundle;
 
-import com.android.internal.net.ipsec.ike.testutils.CertUtils;
+import com.android.internal.net.ipsec.test.ike.testutils.CertUtils;
 
 import org.junit.Test;
 
