@@ -228,7 +228,13 @@ public final class IkeSessionParams {
 
     // @see #getNetwork for reasons of changing the annotation from @NonNull to @Nullable in Android
     // S and why it is safe.
-    @Nullable private final Network mNetwork;
+    // Do not include mDefaultOrConfiguredNetwork in #hashCode or #equal because when it represents
+    // configured network, it always has the same value as mCallerConfiguredNetwork. When it
+    // represents a default network it can only reflects the device status at the IkeSessionParams
+    // creation time. Since the actually default network may change after IkeSessionParams is
+    // constructed, depending on mDefaultOrConfiguredNetwork in #hashCode and #equal to decide
+    // if this object equals to another object does not make sense.
+    @Nullable private final Network mDefaultOrConfiguredNetwork;
 
     @Nullable private final Network mCallerConfiguredNetwork;
 
@@ -259,7 +265,7 @@ public final class IkeSessionParams {
 
     private IkeSessionParams(
             @NonNull String serverHostname,
-            @NonNull Network network,
+            @NonNull Network defaultOrConfiguredNetwork,
             @NonNull Network callerConfiguredNetwork,
             @NonNull IkeSaProposal[] proposals,
             @NonNull IkeIdentification localIdentification,
@@ -276,7 +282,7 @@ public final class IkeSessionParams {
             int nattKeepaliveDelaySec,
             boolean isIkeFragmentationSupported) {
         mServerHostname = serverHostname;
-        mNetwork = network;
+        mDefaultOrConfiguredNetwork = defaultOrConfiguredNetwork;
         mCallerConfiguredNetwork = callerConfiguredNetwork;
 
         mSaProposals = proposals;
@@ -465,7 +471,7 @@ public final class IkeSessionParams {
     @NonNull
     // TODO: b/163604823 Make it @Nullable
     public Network getNetwork() {
-        return mNetwork;
+        return mDefaultOrConfiguredNetwork;
     }
 
     /** Retrieves all IkeSaProposals configured */
@@ -598,7 +604,6 @@ public final class IkeSessionParams {
         return Objects.hash(
                 mServerHostname,
                 mCallerConfiguredNetwork,
-                mNetwork,
                 Arrays.hashCode(mSaProposals),
                 mLocalIdentification,
                 mRemoteIdentification,
@@ -625,7 +630,6 @@ public final class IkeSessionParams {
 
         return mServerHostname.equals(other.mServerHostname)
                 && Objects.equals(mCallerConfiguredNetwork, other.mCallerConfiguredNetwork)
-                && Objects.equals(mNetwork, other.mNetwork)
                 && Arrays.equals(mSaProposals, other.mSaProposals)
                 && mLocalIdentification.equals(other.mLocalIdentification)
                 && mRemoteIdentification.equals(other.mRemoteIdentification)
@@ -1204,6 +1208,41 @@ public final class IkeSessionParams {
         }
 
         /**
+         * Construct Builder from the {@link IkeSessionParams} object.
+         *
+         * @param ikeSessionParams the object this Builder will be constructed with.
+         */
+        public Builder(@NonNull IkeSessionParams ikeSessionParams) {
+            mSaProposalList.addAll(ikeSessionParams.getSaProposals());
+            mConfigRequestList.addAll(Arrays.asList(ikeSessionParams.mConfigRequests));
+
+            int[] retransmissionTimeouts = ikeSessionParams.getRetransmissionTimeoutsMillis();
+            mRetransTimeoutMsList =
+                    Arrays.copyOf(retransmissionTimeouts, retransmissionTimeouts.length);
+
+            mServerHostname = ikeSessionParams.getServerHostname();
+            mCallerConfiguredNetwork = ikeSessionParams.getConfiguredNetwork();
+            mLocalIdentification = ikeSessionParams.getLocalIdentification();
+            mRemoteIdentification = ikeSessionParams.getRemoteIdentification();
+            mLocalAuthConfig = ikeSessionParams.getLocalAuthConfig();
+            mRemoteAuthConfig = ikeSessionParams.getRemoteAuthConfig();
+
+            mIke3gppExtension = ikeSessionParams.getIke3gppExtension();
+
+            mHardLifetimeSec = ikeSessionParams.getHardLifetimeSeconds();
+            mSoftLifetimeSec = ikeSessionParams.getSoftLifetimeSeconds();
+            mDpdDelaySec = ikeSessionParams.getDpdDelaySeconds();
+            mNattKeepaliveDelaySec = ikeSessionParams.getNattKeepAliveDelaySeconds();
+
+            mIkeOptions = ikeSessionParams.mIkeOptions;
+
+            if (!ikeSessionParams.mIsIkeFragmentationSupported) {
+                throw new IllegalStateException(
+                        "mIsIkeFragmentationSupported should never be false");
+            }
+        }
+
+        /**
          * Sets the server hostname for the {@link IkeSessionParams} being built.
          *
          * @param serverHostname the hostname of the IKE server, such as "ike.android.com".
@@ -1223,15 +1262,13 @@ public final class IkeSessionParams {
          * <p>If no {@link Network} is provided, the default Network (as per {@link
          * ConnectivityManager#getActiveNetwork()}) will be used.
          *
-         * @param network the {@link Network} that IKE Session will use.
+         * @param network the {@link Network} that IKE Session will use, or {@code null} to clear
+         *     the previously set {@link Network}
          * @return Builder this, to facilitate chaining.
          */
+        // TODO(b/163604823): Making @NonNull to @Nullable
         @NonNull
         public Builder setConfiguredNetwork(@NonNull Network network) {
-            if (network == null) {
-                throw new NullPointerException("Required argument not provided");
-            }
-
             mCallerConfiguredNetwork = network;
             return this;
         }
