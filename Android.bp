@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
 java_sdk_library {
     name: "android.net.ipsec.ike",
     installable: true,
@@ -125,4 +129,11 @@ java_library {
     static_libs: ["ike-test-utils-dependency"],
     libs: ["androidx.test.rules"],
     visibility: ["//packages/modules/IPsec/tests/cts"]
+}
+
+sdk {
+    name: "ipsec-module-sdk",
+    java_sdk_libs: [
+        "android.net.ipsec.ike",
+    ],
 }
