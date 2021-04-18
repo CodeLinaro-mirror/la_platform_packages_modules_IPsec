@@ -164,8 +164,18 @@ public final class IkeSessionParams {
     // TODO(b/174606949): Use @link tag to reference #applyTunnelModeTransform when it is public
     public static final int IKE_OPTION_MOBIKE = 2;
 
+    /**
+     * Configures the IKE session to always send to port 4500.
+     *
+     * <p>If set, the IKE Session will be initiated and maintained exclusively using
+     * destination port 4500, regardless of the presence of NAT. Otherwise, the IKE Session will
+     * be initiated on destination port 500; then, if either a NAT is detected or both MOBIKE
+     * and NAT-T are supported by the peer, it will proceed on port 4500.
+     */
+    public static final int IKE_OPTION_FORCE_PORT_4500 = 3;
+
     private static final int MIN_IKE_OPTION = IKE_OPTION_ACCEPT_ANY_REMOTE_ID;
-    private static final int MAX_IKE_OPTION = IKE_OPTION_MOBIKE;
+    private static final int MAX_IKE_OPTION = IKE_OPTION_FORCE_PORT_4500;
 
     /** @hide */
     @VisibleForTesting static final int IKE_HARD_LIFETIME_SEC_MINIMUM = 300; // 5 minutes
@@ -198,6 +208,13 @@ public final class IkeSessionParams {
     @VisibleForTesting static final int IKE_NATT_KEEPALIVE_DELAY_SEC_DEFAULT = 10;
 
     /** @hide */
+    @VisibleForTesting static final int DSCP_MIN = 0;
+    /** @hide */
+    @VisibleForTesting static final int DSCP_MAX = 63;
+    /** @hide */
+    @VisibleForTesting static final int DSCP_DEFAULT = 0;
+
+    /** @hide */
     @VisibleForTesting static final int IKE_RETRANS_TIMEOUT_MS_MIN = 500;
     /** @hide */
     @VisibleForTesting
@@ -222,12 +239,12 @@ public final class IkeSessionParams {
     private static final String SOFT_LIFETIME_SEC_KEY = "mSoftLifetimeSec";
     private static final String DPD_DELAY_SEC_KEY = "mDpdDelaySec";
     private static final String NATT_KEEPALIVE_DELAY_SEC_KEY = "mNattKeepaliveDelaySec";
+    private static final String DSCP_KEY = "mDscp";
     private static final String IS_IKE_FRAGMENT_SUPPORTED_KEY = "mIsIkeFragmentationSupported";
 
     @NonNull private final String mServerHostname;
 
-    // @see #getNetwork for reasons of changing the annotation from @NonNull to @Nullable in Android
-    // S and why it is safe.
+    // @see #getNetwork for reasons of changing the annotation from @NonNull to @Nullable in SDK S.
     // Do not include mDefaultOrConfiguredNetwork in #hashCode or #equal because when it represents
     // configured network, it always has the same value as mCallerConfiguredNetwork. When it
     // represents a default network it can only reflects the device status at the IkeSessionParams
@@ -258,8 +275,8 @@ public final class IkeSessionParams {
     private final int mSoftLifetimeSec;
 
     private final int mDpdDelaySec;
-
     private final int mNattKeepaliveDelaySec;
+    private final int mDscp;
 
     private final boolean mIsIkeFragmentationSupported;
 
@@ -280,6 +297,7 @@ public final class IkeSessionParams {
             int softLifetimeSec,
             int dpdDelaySec,
             int nattKeepaliveDelaySec,
+            int dscp,
             boolean isIkeFragmentationSupported) {
         mServerHostname = serverHostname;
         mDefaultOrConfiguredNetwork = defaultOrConfiguredNetwork;
@@ -305,8 +323,8 @@ public final class IkeSessionParams {
         mSoftLifetimeSec = softLifetimeSec;
 
         mDpdDelaySec = dpdDelaySec;
-
         mNattKeepaliveDelaySec = nattKeepaliveDelaySec;
+        mDscp = dscp;
 
         mIsIkeFragmentationSupported = isIkeFragmentationSupported;
     }
@@ -422,6 +440,7 @@ public final class IkeSessionParams {
         result.putInt(SOFT_LIFETIME_SEC_KEY, mSoftLifetimeSec);
         result.putInt(DPD_DELAY_SEC_KEY, mDpdDelaySec);
         result.putInt(NATT_KEEPALIVE_DELAY_SEC_KEY, mNattKeepaliveDelaySec);
+        result.putInt(DSCP_KEY, mDscp);
         result.putBoolean(IS_IKE_FRAGMENT_SUPPORTED_KEY, mIsIkeFragmentationSupported);
 
         return result;
@@ -449,10 +468,13 @@ public final class IkeSessionParams {
      * <p>This method is deprecated and its annotation has been changed from @NonNull to @Nullable
      * since Android S. This method needs to be @Nullable because a new Builder constructor {@link
      * Builder#Builder() was added in Android S, and by using the new constructor the return value
-     * of this method will be null. Also making this method @Nullable will not break the backwards
-     * compatibility because for any app that uses the deprecated constructor
-     * {@link Builder#Builder(Context)}, the return value of this method is still guaranteed to
-     * be non-null.
+     * of this method will be null.
+     *
+     * <p>For apps that are using a null-safe language, making this method @Nullable will break
+     * compilation, and apps need to update their code. For apps that are not using null-safe
+     * language, making this change will not break the backwards compatibility because for any app
+     * that uses the deprecated constructor {@link Builder#Builder(Context)}, the return value of
+     * this method is still guaranteed to be non-null.
      *
      * <p>For a caller that used {@link Builder#Builder(Context)} and did not set any Network,
      * this method will return the default Network resolved in
@@ -469,7 +491,8 @@ public final class IkeSessionParams {
     @Deprecated
     @SystemApi
     @NonNull
-    // TODO: b/163604823 Make it @Nullable
+    // STOPSHIP: b/180521384 Make it @Nullable when java_sdk_library can support
+    // incompabilities baseline file
     public Network getNetwork() {
         return mDefaultOrConfiguredNetwork;
     }
@@ -539,6 +562,17 @@ public final class IkeSessionParams {
     @IntRange(from = IKE_NATT_KEEPALIVE_DELAY_SEC_MIN, to = IKE_NATT_KEEPALIVE_DELAY_SEC_MAX)
     public int getNattKeepAliveDelaySeconds() {
         return mNattKeepaliveDelaySec;
+    }
+
+    /**
+     * Retrieves the DSCP field of IKE packets.
+     *
+     * @hide
+     */
+    @SystemApi
+    @IntRange(from = DSCP_MIN, to = DSCP_MAX)
+    public int getDscp() {
+        return mDscp;
     }
 
     /**
@@ -616,6 +650,8 @@ public final class IkeSessionParams {
                 mHardLifetimeSec,
                 mSoftLifetimeSec,
                 mDpdDelaySec,
+                mNattKeepaliveDelaySec,
+                mDscp,
                 mIsIkeFragmentationSupported);
     }
 
@@ -642,6 +678,8 @@ public final class IkeSessionParams {
                 && mHardLifetimeSec == other.mHardLifetimeSec
                 && mSoftLifetimeSec == other.mSoftLifetimeSec
                 && mDpdDelaySec == other.mDpdDelaySec
+                && mNattKeepaliveDelaySec == other.mNattKeepaliveDelaySec
+                && mDscp == other.mDscp
                 && mIsIkeFragmentationSupported == other.mIsIkeFragmentationSupported;
     }
 
@@ -1167,8 +1205,8 @@ public final class IkeSessionParams {
         private int mSoftLifetimeSec = IKE_SOFT_LIFETIME_SEC_DEFAULT;
 
         private int mDpdDelaySec = IKE_DPD_DELAY_SEC_DEFAULT;
-
         private int mNattKeepaliveDelaySec = IKE_NATT_KEEPALIVE_DELAY_SEC_DEFAULT;
+        private int mDscp = DSCP_DEFAULT;
 
         private final boolean mIsIkeFragmentationSupported = true;
 
@@ -1177,25 +1215,22 @@ public final class IkeSessionParams {
          *
          * <p>This constructor is deprecated since Android S. Apps that use this constructor can
          * still expect {@link #build()} to throw if no configured or default network was found. But
-         * apps that use #Builder() MUST NOT expect that behavior anymore.
-         *
-         * <p>This method is deprecated because it is unnecessary to try resolving a default network
-         * or to validate network state before IkeSession starts the packet exchanges. It will also
-         * makes it hard to store IkeSessionParams in a {@link android.os.Parcelable} object such as
-         * VcnConfig.
+         * apps that use {@link #Builder()} MUST NOT expect that behavior anymore.
          *
          * @param context a valid {@link Context} instance.
+         * @deprecated Callers should use {@link #Builder()}.This method is deprecated because it is
+         *     unnecessary to try resolving a default network or to validate network is connected
+         *     before {@link IkeSession} starts the setup process.
+         * @hide
          */
-        // TODO: b/163604823 Deprecate this method and use @link tag to reference #Builder when
-        // #Builder() is exposed.
+        @Deprecated
+        @SystemApi
         public Builder(@NonNull Context context) {
             this((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
         }
 
         /**
          * Construct Builder
-         *
-         * @hide
          */
         public Builder() {}
 
@@ -1233,6 +1268,7 @@ public final class IkeSessionParams {
             mSoftLifetimeSec = ikeSessionParams.getSoftLifetimeSeconds();
             mDpdDelaySec = ikeSessionParams.getDpdDelaySeconds();
             mNattKeepaliveDelaySec = ikeSessionParams.getNattKeepAliveDelaySeconds();
+            mDscp = ikeSessionParams.getDscp();
 
             mIkeOptions = ikeSessionParams.mIkeOptions;
 
@@ -1649,6 +1685,35 @@ public final class IkeSessionParams {
         }
 
         /**
+         * Sets the DSCP field of the IKE packets.
+         *
+         * <p>Differentiated services code point (DSCP) is a 6-bit field in the IP header that is
+         * used for packet classification and prioritization. The DSCP field is encoded in the 6
+         * higher order bits of the Type of Service (ToS) in IPv4 header, or the traffic class (TC)
+         * field in IPv6 header.
+         *
+         * <p>Any 6-bit values (0 to 63) are acceptable, whether IANA-defined, or
+         * implementation-specific values.
+         *
+         * @see <a href="https://tools.ietf.org/html/rfc2474">RFC 2474, Definition of the
+         *     Differentiated Services Field (DS Field) in the IPv4 and IPv6 Headers</a>
+         * @see <a href="https://www.iana.org/assignments/dscp-registry/dscp-registry.xhtml">
+         *     Differentiated Services Field Codepoints (DSCP)</a>
+         * @param dscp the dscp value. Defaults to 0.
+         * @return Builder this, to facilitate chaining.
+         * @hide
+         */
+        @SystemApi
+        @NonNull
+        public Builder setDscp(@IntRange(from = DSCP_MIN, to = DSCP_MAX) int dscp) {
+            if (dscp < DSCP_MIN || dscp > DSCP_MAX) {
+                throw new IllegalArgumentException("Invalid DSCP value");
+            }
+            mDscp = dscp;
+            return this;
+        }
+
+        /**
          * Sets the retransmission timeout list in milliseconds.
          *
          * <p>Configures the retransmission by providing an array of relative retransmission
@@ -1807,6 +1872,7 @@ public final class IkeSessionParams {
                     mSoftLifetimeSec,
                     mDpdDelaySec,
                     mNattKeepaliveDelaySec,
+                    mDscp,
                     mIsIkeFragmentationSupported);
         }
 
