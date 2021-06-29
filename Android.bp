@@ -23,7 +23,6 @@ java_sdk_library {
 
     // ike is used as a shared library.
     shared_library: true,
-    compile_dex: true,
 
     aidl: {
         local_include_dirs: ["src/java"],
@@ -35,8 +34,6 @@ java_sdk_library {
     ],
 
     libs: [
-        // TODO (b/183097033) remove once system_server_current includes core_current
-        "stable.core.platform.api.stubs",
         "unsupportedappusage",
         "framework-annotations-lib",
         "conscrypt.module.public.api",
@@ -77,14 +74,14 @@ java_sdk_library {
 filegroup {
     name: "ike-srcs",
     srcs: [
-        ":ike-internal-srcs",
+        "src/java/**/*.java",
         ":framework-ike-shared-srcs",
     ],
 }
 
 filegroup {
-    name: "ike-internal-srcs",
-    srcs: ["src/java/**/*.java"],
+    name: "ike-api-srcs",
+    srcs: ["src/java/android/**/*.java"],
     path: "src/java/",
 }
 
@@ -141,5 +138,7 @@ java_library {
 
 sdk {
     name: "ipsec-module-sdk",
-    bootclasspath_fragments: ["com.android.ipsec-bootclasspath-fragment"],
+    java_sdk_libs: [
+        "android.net.ipsec.ike",
+    ],
 }

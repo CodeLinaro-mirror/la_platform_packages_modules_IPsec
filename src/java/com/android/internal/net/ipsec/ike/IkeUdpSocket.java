@@ -25,8 +25,6 @@ import android.util.LongSparseArray;
 
 import com.android.internal.annotations.VisibleForTesting;
 
-import libcore.io.IoUtils;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -123,14 +121,13 @@ public abstract class IkeUdpSocket extends IkeSocket {
     @Override
     public void close() {
         try {
-            IoUtils.close(mSocket);
-        } catch (IOException e) {
+            Os.close(mSocket);
+        } catch (ErrnoException e) {
             getIkeLog()
                     .e(
                             this.getClass().getSimpleName(),
                             "Failed to close UDP Socket for Network "
-                                    + getIkeSocketConfig().getNetwork(),
-                            e);
+                                    + getIkeSocketConfig().getNetwork());
         }
 
         // PacketReader unregisters file descriptor from listener on thread with which the Handler

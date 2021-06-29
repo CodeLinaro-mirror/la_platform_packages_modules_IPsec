@@ -53,15 +53,3 @@ android_test {
 
     min_sdk_version: "30",
 }
-
-java_library {
-    name: "ike-tun-utils",
-    srcs: [
-        "src/**/IkeTunUtils.java",
-        "src/**/PacketUtils.java",
-        "src/**/TunUtils.java",
-    ],
-    static_libs: [
-        "junit",
-    ],
-}
