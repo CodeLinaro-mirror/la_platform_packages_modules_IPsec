@@ -316,12 +316,14 @@ abstract class IkeSessionTestBase extends IkeTestNetworkBase {
 
         @Override
         public void onError(@NonNull IkeException exception) {
+            IkeSessionCallback.super.onError(exception);
             mOnErrorExceptionsTrackRecord.add(exception);
         }
 
         @Override
         public void onIkeSessionConnectionInfoChanged(
                 @NonNull IkeSessionConnectionInfo connectionInfo) {
+            IkeSessionCallback.super.onIkeSessionConnectionInfoChanged(connectionInfo);
             mFutureConnectionConfig.complete(connectionInfo);
         }
 
@@ -399,11 +401,6 @@ abstract class IkeSessionTestBase extends IkeTestNetworkBase {
         }
 
         @Override
-        public void onClosedExceptionally(@NonNull IkeException exception) {
-            mFutureOnClosedException.complete(exception);
-        }
-
-        @Override
         public void onIpSecTransformCreated(@NonNull IpSecTransform ipSecTransform, int direction) {
             mCreatedIpSecTransformsTrackRecord.add(
                     new IpSecTransformCallRecord(ipSecTransform, direction));
@@ -412,6 +409,9 @@ abstract class IkeSessionTestBase extends IkeTestNetworkBase {
         @Override
         public void onIpSecTransformsMigrated(
                 IpSecTransform inIpSecTransform, IpSecTransform outIpSecTransform) {
+            ChildSessionCallback.super.onIpSecTransformsMigrated(
+                    inIpSecTransform, outIpSecTransform);
+
             IpSecTransformCallRecord inRecord =
                     new IpSecTransformCallRecord(inIpSecTransform, IpSecManager.DIRECTION_IN);
             IpSecTransformCallRecord outRecord =
