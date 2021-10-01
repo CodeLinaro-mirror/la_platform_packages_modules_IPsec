@@ -101,7 +101,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.annotation.Nullable;
-import android.app.AlarmManager;
 import android.content.Context;
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -137,6 +136,7 @@ import android.net.ipsec.test.ike.ike3gpp.Ike3gppExtension;
 import android.net.ipsec.test.ike.ike3gpp.Ike3gppExtension.Ike3gppDataListener;
 import android.net.ipsec.test.ike.ike3gpp.Ike3gppN1ModeInformation;
 import android.net.ipsec.test.ike.ike3gpp.Ike3gppParams;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.test.TestLooper;
 import android.telephony.TelephonyManager;
@@ -1963,7 +1963,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
                         eq(mLooper.getLooper()),
                         eq(mSpyContext),
                         anyInt(),
-                        any(AlarmManager.class),
+                        any(Handler.class),
                         any(RandomnessFactory.class),
                         any(IpSecSpiGenerator.class),
                         eq(mChildSessionParams),
@@ -2023,7 +2023,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
                         eq(mLooper.getLooper()),
                         eq(mSpyContext),
                         anyInt(),
-                        any(AlarmManager.class),
+                        any(Handler.class),
                         any(RandomnessFactory.class),
                         any(IpSecSpiGenerator.class),
                         eq(mChildSessionParams),
@@ -2858,7 +2858,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
                         eq(mLooper.getLooper()),
                         eq(mSpyContext),
                         anyInt(),
-                        any(AlarmManager.class),
+                        any(Handler.class),
                         any(RandomnessFactory.class),
                         any(IpSecSpiGenerator.class),
                         eq(mChildSessionParams),
@@ -4439,6 +4439,33 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         verifyLastSentRespAllPackets(dummyLastRespBytes, mSpyCurrentIkeSaRecord);
     }
 
+    @Test
+    public void testRetransmittedPacketsAreIdentical() throws Exception {
+        setupIdleStateMachine();
+
+        IkeMessage mockIkeReqMsg = mock(IkeMessage.class);
+        byte[][] dummyReqBytesList =
+                new byte[][] {"testRetransmittedPacketsAreIdentical".getBytes()};
+        doReturn(dummyReqBytesList)
+                .when(mockIkeReqMsg)
+                .encryptAndEncode(any(), any(), eq(mSpyCurrentIkeSaRecord), anyBoolean(), anyInt());
+
+        IkeSessionStateMachine.EncryptedRetransmitter retransmitter =
+                mIkeSessionStateMachine.new EncryptedRetransmitter(mockIkeReqMsg);
+
+        // Packet is immediately sent out
+        verify(mSpyCurrentIkeSocket).sendIkePacket(eq(dummyReqBytesList[0]), eq(REMOTE_ADDRESS));
+        verify(mockIkeReqMsg)
+                .encryptAndEncode(any(), any(), eq(mSpyCurrentIkeSaRecord), anyBoolean(), anyInt());
+
+        // Retransmit packet
+        retransmitter.retransmit();
+        verify(mSpyCurrentIkeSocket, times(2))
+                .sendIkePacket(eq(dummyReqBytesList[0]), eq(REMOTE_ADDRESS));
+        verify(mockIkeReqMsg)
+                .encryptAndEncode(any(), any(), eq(mSpyCurrentIkeSaRecord), anyBoolean(), anyInt());
+    }
+
     // TODO: b/141275871 Test retransmisstions are fired for correct times within certain time.
 
     @Test
@@ -4819,6 +4846,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         mIkeSessionStateMachine.sendMessage(
                 IkeSessionStateMachine.CMD_FORCE_TRANSITION,
                 mIkeSessionStateMachine.mCreateIkeLocalIkeInit);
+        mLooper.dispatchAll();
 
         mIkeSessionStateMachine.killSession();
         mLooper.dispatchAll();
@@ -5032,7 +5060,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
                         eq(mLooper.getLooper()),
                         eq(mSpyContext),
                         anyInt(),
-                        any(AlarmManager.class),
+                        any(Handler.class),
                         any(RandomnessFactory.class),
                         any(IpSecSpiGenerator.class),
                         eq(mChildSessionParams),
