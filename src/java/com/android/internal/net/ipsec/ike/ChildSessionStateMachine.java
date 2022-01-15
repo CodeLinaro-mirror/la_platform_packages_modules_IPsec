@@ -21,13 +21,13 @@ import static android.net.ipsec.ike.exceptions.IkeProtocolException.ERROR_TYPE_T
 
 import static com.android.internal.net.ipsec.ike.IkeSessionStateMachine.BUNDLE_KEY_CHILD_REMOTE_SPI;
 import static com.android.internal.net.ipsec.ike.IkeSessionStateMachine.CMD_ALARM_FIRED;
-import static com.android.internal.net.ipsec.ike.IkeSessionStateMachine.IKE_EXCHANGE_SUBTYPE_DELETE_CHILD;
-import static com.android.internal.net.ipsec.ike.IkeSessionStateMachine.IKE_EXCHANGE_SUBTYPE_REKEY_CHILD;
 import static com.android.internal.net.ipsec.ike.IkeSessionStateMachine.buildIkeAlarmIntent;
 import static com.android.internal.net.ipsec.ike.message.IkeHeader.EXCHANGE_TYPE_CREATE_CHILD_SA;
 import static com.android.internal.net.ipsec.ike.message.IkeHeader.EXCHANGE_TYPE_IKE_AUTH;
 import static com.android.internal.net.ipsec.ike.message.IkeHeader.EXCHANGE_TYPE_INFORMATIONAL;
 import static com.android.internal.net.ipsec.ike.message.IkeHeader.ExchangeType;
+import static com.android.internal.net.ipsec.ike.message.IkeMessage.IKE_EXCHANGE_SUBTYPE_DELETE_CHILD;
+import static com.android.internal.net.ipsec.ike.message.IkeMessage.IKE_EXCHANGE_SUBTYPE_REKEY_CHILD;
 import static com.android.internal.net.ipsec.ike.message.IkeNotifyPayload.NOTIFY_TYPE_REKEY_SA;
 import static com.android.internal.net.ipsec.ike.message.IkeNotifyPayload.NOTIFY_TYPE_USE_TRANSPORT_MODE;
 import static com.android.internal.net.ipsec.ike.message.IkePayload.PAYLOAD_TYPE_CP;
@@ -76,7 +76,6 @@ import android.util.SparseArray;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.net.ipsec.ike.IkeLocalRequestScheduler.ChildLocalRequest;
 import com.android.internal.net.ipsec.ike.IkeLocalRequestScheduler.LocalRequestFactory;
-import com.android.internal.net.ipsec.ike.IkeSessionStateMachine.IkeExchangeSubType;
 import com.android.internal.net.ipsec.ike.SaRecord.ChildSaRecord;
 import com.android.internal.net.ipsec.ike.SaRecord.SaLifetimeAlarmScheduler;
 import com.android.internal.net.ipsec.ike.crypto.IkeCipher;
@@ -86,6 +85,7 @@ import com.android.internal.net.ipsec.ike.message.IkeConfigPayload;
 import com.android.internal.net.ipsec.ike.message.IkeConfigPayload.ConfigAttribute;
 import com.android.internal.net.ipsec.ike.message.IkeDeletePayload;
 import com.android.internal.net.ipsec.ike.message.IkeKePayload;
+import com.android.internal.net.ipsec.ike.message.IkeMessage.IkeExchangeSubType;
 import com.android.internal.net.ipsec.ike.message.IkeNoncePayload;
 import com.android.internal.net.ipsec.ike.message.IkeNotifyPayload;
 import com.android.internal.net.ipsec.ike.message.IkeNotifyPayload.NotifyType;
@@ -251,23 +251,18 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
      */
     ChildSessionStateMachine(
             IkeContext ikeContext,
-            int ikeSessionUniqueId,
-            Handler ikeHandler,
-            IpSecManager ipSecManager,
-            IpSecSpiGenerator ipSecSpiGenerator,
-            ChildSessionParams sessionParams,
-            Executor userCbExecutor,
+            ChildSessionStateMachine.Config childSmConfig,
             ChildSessionCallback userCallback,
             IChildSessionSmCallback childSmCallback) {
-        super(TAG, ikeContext.getLooper(), userCbExecutor);
+        super(TAG, ikeContext.getLooper(), childSmConfig.userCbExecutor);
 
         mIkeContext = ikeContext;
-        mIkeSessionId = ikeSessionUniqueId;
-        mIkeHandler = ikeHandler;
-        mIpSecManager = ipSecManager;
-        mIpSecSpiGenerator = ipSecSpiGenerator;
-        mChildSessionParams = sessionParams;
+        mIkeSessionId = childSmConfig.ikeSessionId;
+        mIkeHandler = childSmConfig.ikeHandler;
+        mIpSecManager = childSmConfig.ipSecManager;
+        mIpSecSpiGenerator = childSmConfig.ipSecSpiGenerator;
 
+        mChildSessionParams = childSmConfig.sessionParams;
         mUserCallback = userCallback;
         mChildSmCallback = childSmCallback;
 
@@ -287,6 +282,31 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
         addState(mRekeyChildRemoteDelete, mKillChildSessionParent);
 
         setInitialState(mInitial);
+    }
+
+    // Configurations provided by an IKE Session for building the Child Session
+    static class Config {
+        public final int ikeSessionId;
+        public final Handler ikeHandler;
+        public final ChildSessionParams sessionParams;
+        public final IpSecManager ipSecManager;
+        public final IpSecSpiGenerator ipSecSpiGenerator;
+        public final Executor userCbExecutor;
+
+        Config(
+                int ikeSessionId,
+                Handler ikeHandler,
+                ChildSessionParams sessionParams,
+                IpSecManager ipSecManager,
+                IpSecSpiGenerator ipSecSpiGenerator,
+                Executor userCbExecutor) {
+            this.ikeSessionId = ikeSessionId;
+            this.ikeHandler = ikeHandler;
+            this.sessionParams = sessionParams;
+            this.ipSecManager = ipSecManager;
+            this.ipSecSpiGenerator = ipSecSpiGenerator;
+            this.userCbExecutor = userCbExecutor;
+        }
     }
 
     /**
@@ -663,7 +683,7 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
                         mUserCallback.onClosedWithException(new IkeInternalException(e));
                     });
             logWtf("Unexpected exception in " + getCurrentState().getName(), e);
-            quitNow();
+            quitSessionNow();
         }
 
         @Override
@@ -723,7 +743,7 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
 
         // Clean up all SaRecords and quit
         closeAllSaRecords(false /*expectSaClosed*/);
-        quitNow();
+        quitSessionNow();
     }
 
     /**
@@ -746,7 +766,7 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
 
                     closeAllSaRecords(false /*expectSaClosed*/);
 
-                    quitNow();
+                    quitSessionNow();
                     return HANDLED;
                 default:
                     return NOT_HANDLED;
@@ -979,7 +999,7 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
                             () -> {
                                 mUserCallback.onClosed();
                             });
-                    quitNow();
+                    quitSessionNow();
                     return HANDLED;
                 case CMD_FORCE_TRANSITION:
                     transitionTo((State) message.obj);
@@ -1165,7 +1185,7 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
             switch (message.what) {
                 case CMD_HANDLE_RECEIVED_RESPONSE:
                     // Do not need to verify the response since the Child Session is already closed
-                    quitNow();
+                    quitSessionNow();
                     return HANDLED;
                 default:
                     return NOT_HANDLED;
@@ -1249,7 +1269,7 @@ public class ChildSessionStateMachine extends AbstractSessionStateMachine {
             mCurrentChildSaRecord = null;
 
             if (quitStateMachine) {
-                quitNow();
+                quitSessionNow();
             }
         }
     }
