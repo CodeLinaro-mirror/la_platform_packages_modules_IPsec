@@ -476,12 +476,14 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine
 
         synchronized (IKE_SESSION_LOCK) {
             if (!sContextToIkeSmMap.containsKey(context)) {
+                int flags = SdkLevel.isAtLeastT() ? Context.RECEIVER_NOT_EXPORTED : 0;
                 // Pass in a Handler so #onReceive will run on the StateMachine thread
                 context.registerReceiver(
                         sIkeAlarmReceiver,
                         sIntentFilter,
                         null /*broadcastPermission*/,
-                        new Handler(looper));
+                        new Handler(looper),
+                        flags);
                 sContextToIkeSmMap.put(context, new HashSet<IkeSessionStateMachine>());
             }
             sContextToIkeSmMap.get(context).add(this);
@@ -5591,12 +5593,8 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine
 
     @Override
     public void onUnderlyingNetworkDied(Network network) {
-        if (mEnabledExtensions.contains(IKE_OPTION_MOBIKE)) {
-            executeUserCallback(
-                    () -> mIkeSessionCallback.onError(new IkeNetworkLostException(network)));
-        } else {
-            handleIkeFatalError(new IkeInternalException("Network " + network + " disconnected"));
-        }
+        executeUserCallback(
+                () -> mIkeSessionCallback.onError(new IkeNetworkLostException(network)));
     }
 
     @Override
