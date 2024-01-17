@@ -22,6 +22,7 @@ import static android.net.ipsec.ike.IkeSessionParams.ESP_IP_VERSION_IPV6;
 import static android.net.ipsec.ike.IkeSessionParams.IKE_NATT_KEEPALIVE_DELAY_SEC_MAX;
 import static android.net.ipsec.ike.IkeSessionParams.IKE_NATT_KEEPALIVE_DELAY_SEC_MIN;
 
+import android.annotation.FlaggedApi;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.SuppressLint;
@@ -38,6 +39,7 @@ import android.util.CloseGuard;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.net.ipsec.ike.IkeSessionStateMachine;
 
+import java.io.PrintWriter;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 
@@ -456,7 +458,26 @@ public final class IkeSession implements AutoCloseable {
      * @hide
      */
     @SystemApi
+    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     public void requestLivenessCheck() {
         mIkeSessionStateMachine.requestLivenessCheck();
+    }
+
+    /**
+     * Dumps the state of {@link IkeSession} information for the clients
+     *
+     * @param pw Print writer
+     */
+    @FlaggedApi("com.android.ipsec.flags.dumpsys_api")
+    public void dump(@NonNull PrintWriter pw) {
+        pw.println();
+        pw.println("IkeSession:");
+        pw.println("------------------------------");
+        // Dump ike state machine
+        if (mIkeSessionStateMachine != null) {
+            pw.println();
+            mIkeSessionStateMachine.dump(pw);
+        }
+        pw.println("------------------------------");
     }
 }
