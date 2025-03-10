@@ -20,9 +20,9 @@ import static android.system.OsConstants.AF_INET;
 import static android.system.OsConstants.IPPROTO_UDP;
 import static android.system.OsConstants.SOCK_DGRAM;
 
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -53,14 +53,14 @@ public final class MockIpSecTestUtils {
         mContext = InstrumentationRegistry.getContext();
         mIpSecManager = new IpSecManager(mContext, mMockIpSecService);
 
-        when(mMockIpSecService.allocateSecurityParameterIndex(anyString(), anyInt(), anyObject()))
+        when(mMockIpSecService.allocateSecurityParameterIndex(anyString(), anyInt(), any()))
                 .thenReturn(
                         new IpSecSpiResponse(
                                 IpSecManager.Status.OK,
                                 DUMMY_CHILD_SPI_RESOURCE_ID,
                                 DUMMY_CHILD_SPI));
 
-        when(mMockIpSecService.openUdpEncapsulationSocket(anyInt(), anyObject()))
+        when(mMockIpSecService.openUdpEncapsulationSocket(anyInt(), any()))
                 .thenReturn(
                         new IpSecUdpEncapResponse(
                                 IpSecManager.Status.OK,

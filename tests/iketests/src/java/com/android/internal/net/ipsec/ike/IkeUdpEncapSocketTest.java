@@ -20,7 +20,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -91,11 +90,11 @@ public final class IkeUdpEncapSocketTest extends IkeSocketTestBase {
         IpSecManager dummyIpSecManager = mockIpSecTestUtils.getIpSecManager();
         IpSecService ipSecService = mockIpSecTestUtils.getIpSecService();
 
-        when(ipSecService.openUdpEncapsulationSocket(anyInt(), anyObject()))
+        when(ipSecService.openUdpEncapsulationSocket(anyInt(), any()))
                 .thenReturn(MockIpSecTestUtils.buildDummyIpSecUdpEncapResponse(12345));
         mSpyDummyUdpEncapSocketOne = spy(dummyIpSecManager.openUdpEncapsulationSocket());
 
-        when(ipSecService.openUdpEncapsulationSocket(anyInt(), anyObject()))
+        when(ipSecService.openUdpEncapsulationSocket(anyInt(), any()))
                 .thenReturn(MockIpSecTestUtils.buildDummyIpSecUdpEncapResponse(23456));
         mSpyDummyUdpEncapSocketTwo = spy(dummyIpSecManager.openUdpEncapsulationSocket());
 
