@@ -24,9 +24,8 @@ import static com.android.internal.net.ipsec.test.ike.utils.IkeAlarm.IkeAlarmCon
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -122,12 +121,12 @@ public class IkeNattKeepaliveTest {
         doReturn(mMockSocketKeepalive)
                 .when(mMockConnectManager)
                 .createSocketKeepalive(
-                        anyObject(),
-                        anyObject(),
-                        anyObject(),
-                        anyObject(),
-                        anyObject(),
-                        anyObject());
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any());
     }
 
     private void resetMockDeps(
@@ -135,10 +134,10 @@ public class IkeNattKeepaliveTest {
         reset(mMockDeps);
         doReturn(softwareKeepalive)
                 .when(mMockDeps)
-                .createSoftwareKeepaliveImpl(anyObject(), anyObject(), anyObject(), anyObject());
+                .createSoftwareKeepaliveImpl(any(), any(), any(), any());
         doReturn(hardwareKeepalive)
                 .when(mMockDeps)
-                .createHardwareKeepaliveImpl(anyObject(), anyObject(), anyObject(), anyObject());
+                .createHardwareKeepaliveImpl(any(), any(), any(), any());
     }
 
     private IkeNattKeepalive createIkeNattKeepalive() throws Exception {
@@ -150,7 +149,7 @@ public class IkeNattKeepaliveTest {
         reset(mMockDeps);
         doReturn(mMockSoftwareKeepalive)
                 .when(mMockDeps)
-                .createSoftwareKeepaliveImpl(anyObject(), anyObject(), anyObject(), anyObject());
+                .createSoftwareKeepaliveImpl(any(), any(), any(), any());
         return createIkeNattKeepalive();
     }
 
@@ -218,11 +217,11 @@ public class IkeNattKeepaliveTest {
 
         verify(mockConnectManager)
                 .createSocketKeepalive(
-                        anyObject(),
-                        anyObject(),
-                        anyObject(),
-                        anyObject(),
-                        anyObject(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
                         socketKeepaliveCbCaptor.capture());
 
         return socketKeepaliveCbCaptor.getValue();

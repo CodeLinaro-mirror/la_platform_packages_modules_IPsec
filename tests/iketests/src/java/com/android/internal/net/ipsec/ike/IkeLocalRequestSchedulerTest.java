@@ -24,7 +24,7 @@ import static com.android.internal.net.ipsec.test.ike.IkeSessionStateMachine.CMD
 import static com.android.internal.net.ipsec.test.ike.IkeSessionStateMachine.CMD_LOCAL_REQUEST_MOBIKE;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
