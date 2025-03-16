@@ -34,10 +34,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -252,12 +251,12 @@ public final class IkeSaPayloadTest {
 
         IpSecService mMockIpSecService = mMockIpSecTestUtils.getIpSecService();
         when(mMockIpSecService.allocateSecurityParameterIndex(
-                        eq(LOCAL_ADDRESS.getHostAddress()), anyInt(), anyObject()))
+                        eq(LOCAL_ADDRESS.getHostAddress()), anyInt(), any()))
                 .thenReturn(MockIpSecTestUtils.buildDummyIpSecSpiResponse(CHILD_SPI_LOCAL_ONE))
                 .thenReturn(MockIpSecTestUtils.buildDummyIpSecSpiResponse(CHILD_SPI_LOCAL_TWO));
 
         when(mMockIpSecService.allocateSecurityParameterIndex(
-                        eq(REMOTE_ADDRESS.getHostAddress()), anyInt(), anyObject()))
+                        eq(REMOTE_ADDRESS.getHostAddress()), anyInt(), any()))
                 .thenReturn(MockIpSecTestUtils.buildDummyIpSecSpiResponse(CHILD_SPI_REMOTE));
 
         mIkeSpiGenerator = new IkeSpiGenerator(createMockRandomFactory());

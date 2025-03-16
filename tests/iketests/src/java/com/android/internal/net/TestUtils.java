@@ -16,8 +16,8 @@
 
 package com.android.internal.net;
 
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -82,7 +82,7 @@ public class TestUtils {
                     throw (Throwable) invocation.getArguments()[2];
                 })
                 .when(spyLog)
-                .wtf(anyString(), anyString(), anyObject());
+                .wtf(anyString(), anyString(), any());
 
         return spyLog;
     }
@@ -109,7 +109,7 @@ public class TestUtils {
                     return null;
                 })
                 .when(spyLog)
-                .wtf(anyString(), anyString(), anyObject());
+                .wtf(anyString(), anyString(), any());
 
         return spyLog;
     }
