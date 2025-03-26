@@ -52,13 +52,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -341,7 +340,7 @@ public final class ChildSessionStateMachineTest extends IkeSessionTestBase {
 
     private void setUpSpiResource(InetAddress address, int spiRequested) throws Exception {
         when(mMockIpSecService.allocateSecurityParameterIndex(
-                        eq(address.getHostAddress()), anyInt(), anyObject()))
+                        eq(address.getHostAddress()), anyInt(), any()))
                 .thenReturn(MockIpSecTestUtils.buildDummyIpSecSpiResponse(spiRequested));
     }
 
@@ -1984,7 +1983,7 @@ public final class ChildSessionStateMachineTest extends IkeSessionTestBase {
 
         // Verify no response sent.
         verify(mMockChildSessionSmCallback, never())
-                .onOutboundPayloadsReady(anyInt(), anyBoolean(), any(List.class), anyObject());
+                .onOutboundPayloadsReady(anyInt(), anyBoolean(), any(List.class), any());
 
         // Verify Child SA has been renewed
         verifyChildSaUpdated(mSpyCurrentChildSaRecord, mSpyRemoteInitNewChildSaRecord);

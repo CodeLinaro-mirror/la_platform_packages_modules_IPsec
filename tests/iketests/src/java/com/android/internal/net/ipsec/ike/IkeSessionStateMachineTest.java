@@ -92,14 +92,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -1474,8 +1473,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
     private IkeMessage verifyEncryptAndEncodeAndGetMessage(IkeSaRecord ikeSaRecord) {
         verify(mMockIkeMessageHelper)
                 .encryptAndEncode(
-                        anyObject(),
-                        anyObject(),
+                        any(),
+                        any(),
                         eq(ikeSaRecord),
                         mIkeMessageCaptor.capture(),
                         anyBoolean(),
@@ -1486,8 +1485,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
     private void verifyEncryptAndEncodeNeverCalled(IkeSaRecord ikeSaRecord) {
         verify(mMockIkeMessageHelper, never())
                 .encryptAndEncode(
-                        anyObject(),
-                        anyObject(),
+                        any(),
+                        any(),
                         eq(ikeSaRecord),
                         any(IkeMessage.class),
                         anyBoolean(),
@@ -1497,8 +1496,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
     private void verifyEncryptAndEncodeNeverCalled() {
         verify(mMockIkeMessageHelper, never())
                 .encryptAndEncode(
-                        anyObject(),
-                        anyObject(),
+                        any(),
+                        any(),
                         any(IkeSaRecord.class),
                         any(IkeMessage.class),
                         anyBoolean(),
@@ -3286,8 +3285,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
     private void verifyEmptyInformationalSent(int count, boolean expectedResp) {
         verify(mMockIkeMessageHelper, times(count))
                 .encryptAndEncode(
-                        anyObject(),
-                        anyObject(),
+                        any(),
+                        any(),
                         eq(mSpyCurrentIkeSaRecord),
                         argThat(
                                 msg -> {
@@ -3724,8 +3723,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
 
         verify(mMockIkeMessageHelper, times(2))
                 .encryptAndEncode(
-                        anyObject(),
-                        anyObject(),
+                        any(),
+                        any(),
                         eq(mSpyCurrentIkeSaRecord),
                         mIkeMessageCaptor.capture(),
                         anyBoolean(),
@@ -4762,7 +4761,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         mLooper.dispatchAll();
 
         // Verify no request received, or response sent.
-        verify(mMockIkeMessageHelper, never()).decode(anyInt(), anyObject(), anyObject());
+        verify(mMockIkeMessageHelper, never()).decode(anyInt(), any(), any());
         verifyEncryptAndEncodeNeverCalled(mSpyCurrentIkeSaRecord);
 
         // Verify final state has not changed - signal was not sent.
@@ -4786,7 +4785,7 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         mLooper.dispatchAll();
 
         // Verify no request received, or response sent.
-        verify(mMockIkeMessageHelper, never()).decode(anyInt(), anyObject(), anyObject());
+        verify(mMockIkeMessageHelper, never()).decode(anyInt(), any(), any());
         verifyEncryptAndEncodeNeverCalled(mSpyCurrentIkeSaRecord);
 
         // Verify final state - Idle, with new SA, and old SA closed.
@@ -7576,8 +7575,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         // Verify that message is EXCHANGE_TYPE_CREATE_CHILD_SA.
         verify(mMockIkeMessageHelper, times(1))
                 .encryptAndEncode(
-                        anyObject(),
-                        anyObject(),
+                        any(),
+                        any(),
                         eq(mSpyCurrentIkeSaRecord),
                         mIkeMessageCaptor.capture(),
                         anyBoolean(),
@@ -7629,8 +7628,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         // Verify that message is EXCHANGE_TYPE_INFORMATIONAL.
         verify(mMockIkeMessageHelper, times(2))
                 .encryptAndEncode(
-                        anyObject(),
-                        anyObject(),
+                        any(),
+                        any(),
                         eq(mSpyCurrentIkeSaRecord),
                         mIkeMessageCaptor.capture(),
                         anyBoolean(),
