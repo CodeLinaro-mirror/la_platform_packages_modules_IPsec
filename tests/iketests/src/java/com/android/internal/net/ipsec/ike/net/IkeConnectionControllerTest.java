@@ -33,7 +33,6 @@ import static android.net.ipsec.test.ike.IkeSessionParams.IKE_OPTION_FORCE_DNS_R
 import static android.net.ipsec.test.ike.IkeSessionParams.IKE_OPTION_FORCE_PORT_4500;
 
 import static com.android.internal.net.ipsec.test.ike.IkeContext.CONFIG_AUTO_NATT_KEEPALIVES_CELLULAR_TIMEOUT_OVERRIDE_SECONDS;
-import static com.android.internal.net.ipsec.test.ike.IkeContext.CONFIG_USE_CACHED_ADDRS;
 import static com.android.internal.net.ipsec.test.ike.net.IkeConnectionController.AUTO_KEEPALIVE_DELAY_SEC_CELL;
 import static com.android.internal.net.ipsec.test.ike.net.IkeConnectionController.AUTO_KEEPALIVE_DELAY_SEC_WIFI;
 import static com.android.internal.net.ipsec.test.ike.net.IkeConnectionController.NAT_TRAVERSAL_SUPPORT_NOT_CHECKED;
@@ -47,7 +46,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -79,6 +77,10 @@ import android.net.ipsec.test.ike.exceptions.IkeInternalException;
 import android.os.Build.VERSION_CODES;
 import android.os.Handler;
 import android.os.Looper;
+import android.platform.test.annotations.RequiresFlagsDisabled;
+import android.platform.test.annotations.RequiresFlagsEnabled;
+import android.platform.test.flag.junit.CheckFlagsRule;
+import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 
 import com.android.internal.net.TestUtils;
 import com.android.internal.net.ipsec.test.ike.IkeContext;
@@ -94,6 +96,7 @@ import com.android.internal.net.ipsec.test.ike.keepalive.IkeNattKeepalive;
 import com.android.internal.net.ipsec.test.ike.utils.IkeAlarm.IkeAlarmConfig;
 import com.android.internal.net.ipsec.test.ike.utils.RandomnessFactory;
 import com.android.internal.net.utils.test.Log;
+import com.android.ipsec.flags.Flags;
 import com.android.modules.utils.build.SdkLevel;
 import com.android.testutils.DevSdkIgnoreRule;
 import com.android.testutils.DevSdkIgnoreRule.IgnoreAfter;
@@ -116,6 +119,9 @@ import java.util.concurrent.TimeUnit;
 
 public class IkeConnectionControllerTest extends IkeSessionTestBase {
     @Rule public final DevSdkIgnoreRule ignoreRule = new DevSdkIgnoreRule();
+
+    @Rule
+    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     private static final long IKE_LOCAL_SPI = 11L;
 
@@ -164,10 +170,6 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
                 .thenReturn(mMockIkeUdpEncapSocket);
         when(mMockConnectionCtrlDeps.newIkeUdp6WithEncapPortSocket(any(), any(), any()))
                 .thenReturn(mMockIkeUdp6WithEncapPortSocket);
-
-        doReturn(true)
-                .when(mIkeContext)
-                .getDeviceConfigPropertyBoolean(eq(CONFIG_USE_CACHED_ADDRS), anyBoolean());
 
         return new IkeConnectionController(
                 mIkeContext,
@@ -1549,10 +1551,8 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
+    @RequiresFlagsDisabled(Flags.FLAG_USE_CACHED_ADDRESSES)
     public void testIsDnsLookupRequired_NetworkChange_LocalRemoteMatch_FlagOff() throws Exception {
-        doReturn(false)
-                .when(mIkeContext)
-                .getDeviceConfigPropertyBoolean(eq(CONFIG_USE_CACHED_ADDRS), anyBoolean());
         verifyIsDnsLookupRequired(
                 true /* isNetworkChanged */,
                 true /* hasLocalV4 */,
@@ -1563,6 +1563,7 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_USE_CACHED_ADDRESSES)
     public void testIsDnsLookupRequired_NetworkChange_LocalRemoteMatch_FlagOn() throws Exception {
         verifyIsDnsLookupRequired(
                 true /* isNetworkChanged */,
@@ -1574,10 +1575,8 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
+    @RequiresFlagsDisabled(Flags.FLAG_USE_CACHED_ADDRESSES)
     public void testIsDnsLookupRequired_NetworkChange_RemoteV4V6_FlagOff() throws Exception {
-        doReturn(false)
-                .when(mIkeContext)
-                .getDeviceConfigPropertyBoolean(eq(CONFIG_USE_CACHED_ADDRS), anyBoolean());
         verifyIsDnsLookupRequired(
                 true /* isNetworkChanged */,
                 false /* hasLocalV4 */,
@@ -1588,6 +1587,7 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_USE_CACHED_ADDRESSES)
     public void testIsDnsLookupRequired_NetworkChange_RemoteV4V6_FlagOn() throws Exception {
         verifyIsDnsLookupRequired(
                 true /* isNetworkChanged */,
@@ -1710,10 +1710,8 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
+    @RequiresFlagsDisabled(Flags.FLAG_USE_CACHED_ADDRESSES)
     public void testIsDnsLookupRequired_LocalV4_RemoteV4V6_FlagOff() throws Exception {
-        doReturn(false)
-                .when(mIkeContext)
-                .getDeviceConfigPropertyBoolean(eq(CONFIG_USE_CACHED_ADDRS), anyBoolean());
         verifyIsDnsLookupRequired(
                 true /* hasLocalV4 */,
                 false /* hasLocalV6 */,
@@ -1723,6 +1721,7 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_USE_CACHED_ADDRESSES)
     public void testIsDnsLookupRequired_LocalV4_RemoteV4V6_FlagOn() throws Exception {
         verifyIsDnsLookupRequired(
                 true /* hasLocalV4 */,
