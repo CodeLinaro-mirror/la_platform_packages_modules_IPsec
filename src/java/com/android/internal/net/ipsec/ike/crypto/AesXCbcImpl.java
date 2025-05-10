@@ -16,7 +16,7 @@
 
 package com.android.internal.net.ipsec.ike.crypto;
 
-import com.android.internal.util.HexDump;
+import com.android.net.module.util.HexDump;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
