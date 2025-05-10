@@ -40,7 +40,6 @@ import static android.system.OsConstants.AF_INET6;
 import static com.android.internal.net.TestUtils.createMockRandomFactory;
 import static com.android.internal.net.eap.test.EapResult.EapResponse.RESPONSE_FLAG_EAP_AKA_SERVER_AUTHENTICATED;
 import static com.android.internal.net.ipsec.test.ike.AbstractSessionStateMachine.RETRY_INTERVAL_MS;
-import static com.android.internal.net.ipsec.test.ike.IkeContext.CONFIG_USE_CACHED_ADDRS;
 import static com.android.internal.net.ipsec.test.ike.IkeSessionStateMachine.CMD_ALARM_FIRED;
 import static com.android.internal.net.ipsec.test.ike.IkeSessionStateMachine.CMD_FORCE_TRANSITION;
 import static com.android.internal.net.ipsec.test.ike.IkeSessionStateMachine.CMD_RECEIVE_IKE_PACKET;
@@ -986,9 +985,6 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         final IkeAlarmConfig alarmConfig = spy(new IkeAlarmConfig(mSpyContext,
                 "mock", NATT_KEEPALIVE_DELAY * 1_000, null, null));
 
-        doReturn(true)
-                .when(ikeContext)
-                .getDeviceConfigPropertyBoolean(eq(CONFIG_USE_CACHED_ADDRS), anyBoolean());
         mSpyIkeConnectionCtrl =
                 spy(
                         new IkeConnectionController(
