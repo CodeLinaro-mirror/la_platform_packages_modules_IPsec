@@ -32,3 +32,10 @@ flag {
   description: "Expose API to return enabled IKE options"
   bug: "308513922"
 }
+
+flag {
+    name: "use_cached_addresses"
+    namespace: "ipsec"
+    description: "Feature flag for enabling DNS caching during mobility update"
+    bug: "254140820"
+}

@@ -33,7 +33,6 @@ import static android.net.ipsec.ike.IkeSessionParams.IKE_OPTION_FORCE_PORT_4500;
 import static android.net.ipsec.ike.exceptions.IkeException.wrapAsIkeException;
 
 import static com.android.internal.net.ipsec.ike.IkeContext.CONFIG_AUTO_NATT_KEEPALIVES_CELLULAR_TIMEOUT_OVERRIDE_SECONDS;
-import static com.android.internal.net.ipsec.ike.IkeContext.CONFIG_USE_CACHED_ADDRS;
 import static com.android.internal.net.ipsec.ike.utils.IkeAlarm.IkeAlarmConfig;
 import static com.android.internal.net.ipsec.ike.utils.IkeAlarmReceiver.ACTION_KEEPALIVE;
 
@@ -71,6 +70,7 @@ import com.android.internal.net.ipsec.ike.message.IkeHeader;
 import com.android.internal.net.ipsec.ike.shim.ShimUtils;
 import com.android.internal.net.ipsec.ike.utils.IkeAlarm;
 import com.android.internal.net.ipsec.ike.utils.IkeMetrics;
+import com.android.ipsec.flags.Flags;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -1202,9 +1202,7 @@ public class IkeConnectionController implements IkeNetworkUpdater, IkeSocket.Cal
             return false;
         }
 
-        if (mIkeContext.getDeviceConfigPropertyBoolean(
-                        CONFIG_USE_CACHED_ADDRS, false /* defaultValue */)
-                && remoteIpVersionsCached.containsAll(localIpVersions)) {
+        if (Flags.useCachedAddresses() && remoteIpVersionsCached.containsAll(localIpVersions)) {
             return false;
         }
 
