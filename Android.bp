@@ -78,6 +78,7 @@ java_sdk_library {
         "com.android.internal.net",
         "android.net.ipsec.ike",
         "android.net.eap",
+        "com.android.ipsec.flags",
     ],
     min_sdk_version: "30",
 }
@@ -115,6 +116,7 @@ java_library {
     ],
     static_libs: [
         "bouncycastle_ike_digests",
+        "ipsec_aconfig_flags_lib",
         "modules-utils-build",
         "modules-utils-statemachine",
         "net-utils-framework-ipsec",
