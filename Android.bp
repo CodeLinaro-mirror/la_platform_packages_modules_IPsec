@@ -120,6 +120,7 @@ java_library {
         "modules-utils-build",
         "modules-utils-statemachine",
         "net-utils-framework-ipsec",
+        "vcn-utils-framework-ipsec",
     ],
     sdk_version: "module_current",
 }
