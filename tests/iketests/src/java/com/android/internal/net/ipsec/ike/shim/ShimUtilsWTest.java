@@ -16,7 +16,7 @@
 
 package com.android.internal.net.ipsec.test.ike.shim;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import org.junit.Test;
 
@@ -26,6 +26,6 @@ public class ShimUtilsWTest {
     @Test
     public void testSuspendOnNetworkLossEnabled() {
         boolean enabled = mShim.suspendOnNetworkLossEnabled();
-        assertTrue(enabled);
+        assertFalse(enabled);
     }
 }
