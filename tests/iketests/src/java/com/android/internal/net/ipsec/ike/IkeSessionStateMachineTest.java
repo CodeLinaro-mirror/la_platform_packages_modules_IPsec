@@ -7509,7 +7509,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         mIkeSessionStateMachine.onUnderlyingNetworkDied(mMockDefaultNetwork);
         mLooper.dispatchAll();
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        // TODO: b/433656233  Suspend Retransmission while MOBIKE design improvement
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.BAKLAVA) {
             verifyRetransmitContinuesAndSessionTerminatedByTimeout(
                     IkeSessionStateMachine.DpdIkeLocalInfo.class);
         } else {
@@ -7532,7 +7533,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
                 CMD_FORCE_TRANSITION, mIkeSessionStateMachine.mDpdIkeLocalInfo);
         mLooper.dispatchAll();
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        // TODO: b/433656233  Suspend Retransmission while MOBIKE design improvement
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.BAKLAVA) {
             verifyRetransmitContinuesAndSessionTerminatedByTimeout(
                     IkeSessionStateMachine.DpdIkeLocalInfo.class);
         } else {
@@ -7552,7 +7554,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         mIkeSessionStateMachine.onUnderlyingNetworkDied(mMockDefaultNetwork);
         mLooper.dispatchAll();
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        // TODO: b/433656233  Suspend Retransmission while MOBIKE design improvement
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.BAKLAVA) {
             // Make sure the retransmit flag is not set to suspended.
             assertFalse(mIkeSessionStateMachine.mIsRetransmitSuspended);
         } else {
@@ -7589,7 +7592,8 @@ public final class IkeSessionStateMachineTest extends IkeSessionTestBase {
         mIkeSessionStateMachine.onUnderlyingNetworkDied(mMockDefaultNetwork);
         mLooper.dispatchAll();
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        // TODO: b/433656233  Suspend Retransmission while MOBIKE design improvement
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.BAKLAVA) {
             // Make sure the retransmit flag is not set to suspended.
             assertFalse(mIkeSessionStateMachine.mIsRetransmitSuspended);
             // Verify that retransmission has started.

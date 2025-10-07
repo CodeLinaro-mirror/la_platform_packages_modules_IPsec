@@ -25,6 +25,6 @@ public class ShimUtilsMinW extends ShimUtilsU {
 
     @Override
     public boolean suspendOnNetworkLossEnabled() {
-        return true;
+        return false;
     }
 }
