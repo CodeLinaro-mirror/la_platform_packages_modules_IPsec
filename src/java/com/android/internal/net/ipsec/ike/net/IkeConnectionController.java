@@ -70,7 +70,6 @@ import com.android.internal.net.ipsec.ike.message.IkeHeader;
 import com.android.internal.net.ipsec.ike.shim.ShimUtils;
 import com.android.internal.net.ipsec.ike.utils.IkeAlarm;
 import com.android.internal.net.ipsec.ike.utils.IkeMetrics;
-import com.android.ipsec.flags.Flags;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -1202,7 +1201,7 @@ public class IkeConnectionController implements IkeNetworkUpdater, IkeSocket.Cal
             return false;
         }
 
-        if (Flags.useCachedAddresses() && remoteIpVersionsCached.containsAll(localIpVersions)) {
+        if (remoteIpVersionsCached.containsAll(localIpVersions)) {
             return false;
         }
 
