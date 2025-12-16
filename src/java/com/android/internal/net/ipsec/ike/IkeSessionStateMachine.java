@@ -2004,9 +2004,6 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine
         }
 
         protected void handleReceivedIkePacket(Message message) {
-            // TODO: b/138411550 Notify subclasses when discarding a received packet. Receiving MUST
-            // go back to Idle state in this case.
-
             String methodTag = "handleReceivedIkePacket: ";
 
             ReceivedIkePacket receivedIkePacket = (ReceivedIkePacket) message.obj;
