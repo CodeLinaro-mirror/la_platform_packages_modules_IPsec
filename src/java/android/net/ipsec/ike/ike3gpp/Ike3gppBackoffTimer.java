@@ -28,7 +28,7 @@ import com.android.internal.net.ipsec.ike.message.IkeNotifyPayload;
  * Ike3gppBackoffTimer represents the data provided by the peer/remote endpoint for a BACKOFF_TIMER
  * Notify payload.
  *
- * @see 3GPP TS 24.302 Section 8.2.9.1 BACKOFF_TIMER Notify Payload
+ * @see "3GPP TS 24.302 Section 8.2.9.1 BACKOFF_TIMER Notify Payload"
  * @hide
  */
 @SystemApi
@@ -43,7 +43,7 @@ public final class Ike3gppBackoffTimer extends Ike3gppData {
      * <p>Corresponds to DIAMETER_ERROR_USER_NO_APN_SUBSCRIPTION Result code as specified in 3GPP TS
      * 29.273 Section 10.3.7
      *
-     * @see 3GPP TS 24.302 Section 8.1.2.2
+     * @see "3GPP TS 24.302 Section 8.1.2.2"
      * @deprecated This API is no longer used to distinguish back off timer support. As per TS24.302
      *     section 8.2.9.1, the BACK_OFF timer can be used with any ERROR_NOTIFY type.
      */
@@ -57,7 +57,7 @@ public final class Ike3gppBackoffTimer extends Ike3gppData {
      *
      * <p>Corresponds to DIAMETER_UNABLE_TO_COMPLY Result code as specified in 3GPP TS 29.273
      *
-     * @see 3GPP TS 24.302 Section 8.1.2.2
+     * @see "3GPP TS 24.302 Section 8.1.2.2"
      * @deprecated This API is no longer used to distinguish back off timer support. As per TS24.302
      *     section 8.2.9.1, the BACK_OFF timer can be used with any ERROR_NOTIFY type.
      */
