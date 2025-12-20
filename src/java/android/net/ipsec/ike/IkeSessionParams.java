@@ -2216,8 +2216,8 @@ public final class IkeSessionParams {
          * <p>Setting the Ike3gppExtension also enables support for non-configurable payloads, such
          * as the Notify - BACKOFF_TIMER payload.
          *
-         * @see 3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP
-         *     access networks
+         * @see "3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP
+         *     access networks"
          * @param ike3gppExtension the Ike3gppExtension to use for this IKE Session.
          * @return Builder this, to facilitate chaining.
          * @hide

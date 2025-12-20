@@ -29,8 +29,8 @@ import java.util.Objects;
 /**
  * Ike3gppParams is used to configure 3GPP-specific parameters to be used during an IKE Session.
  *
- * @see 3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP access
- *     networks
+ * @see "3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP access
+ *     networks"
  * @hide
  */
 @SystemApi
@@ -135,7 +135,7 @@ public final class Ike3gppParams {
          * Setting the device identity (IMEI or IMEISV) will enable Mobile Device Identity
          * Signalling support.
          *
-         * @see 3GPP 24.302 Section 7.2.6 for details of signaling exchange
+         * @see "3GPP 24.302 Section 7.2.6 for details of signaling exchange"
          * @param deviceIdentity String representing decimal digits of IMEI(SV). IMEI is 15 digits
          *     and IMEISV is 16 digits long as per spec 3GPP TS 23.300. The implementation infers
          *     the Identity Type (IMEI or IMEISV) based on the length of the deviceIdentity passed
