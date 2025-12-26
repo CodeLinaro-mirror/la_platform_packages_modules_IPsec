@@ -77,8 +77,6 @@ import android.net.ipsec.test.ike.exceptions.IkeInternalException;
 import android.os.Build.VERSION_CODES;
 import android.os.Handler;
 import android.os.Looper;
-import android.platform.test.annotations.RequiresFlagsDisabled;
-import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 
@@ -96,7 +94,6 @@ import com.android.internal.net.ipsec.test.ike.keepalive.IkeNattKeepalive;
 import com.android.internal.net.ipsec.test.ike.utils.IkeAlarm.IkeAlarmConfig;
 import com.android.internal.net.ipsec.test.ike.utils.RandomnessFactory;
 import com.android.internal.net.utils.test.Log;
-import com.android.ipsec.flags.Flags;
 import com.android.modules.utils.build.SdkLevel;
 import com.android.testutils.DevSdkIgnoreRule;
 import com.android.testutils.DevSdkIgnoreRule.IgnoreAfter;
@@ -1551,20 +1548,7 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_USE_CACHED_ADDRESSES)
-    public void testIsDnsLookupRequired_NetworkChange_LocalRemoteMatch_FlagOff() throws Exception {
-        verifyIsDnsLookupRequired(
-                true /* isNetworkChanged */,
-                true /* hasLocalV4 */,
-                false /* hasLocalV6 */,
-                true /* hasRemoteV4Cached */,
-                false /* hasRemoteV6Cached */,
-                true /* dnsExpected */);
-    }
-
-    @Test
-    @RequiresFlagsEnabled(Flags.FLAG_USE_CACHED_ADDRESSES)
-    public void testIsDnsLookupRequired_NetworkChange_LocalRemoteMatch_FlagOn() throws Exception {
+    public void testIsDnsLookupRequired_NetworkChange_LocalRemoteMatch() throws Exception {
         verifyIsDnsLookupRequired(
                 true /* isNetworkChanged */,
                 true /* hasLocalV4 */,
@@ -1575,20 +1559,7 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_USE_CACHED_ADDRESSES)
-    public void testIsDnsLookupRequired_NetworkChange_RemoteV4V6_FlagOff() throws Exception {
-        verifyIsDnsLookupRequired(
-                true /* isNetworkChanged */,
-                false /* hasLocalV4 */,
-                true /* hasLocalV6 */,
-                true /* hasRemoteV4Cached */,
-                true /* hasRemoteV6Cached */,
-                true /* dnsExpected */);
-    }
-
-    @Test
-    @RequiresFlagsEnabled(Flags.FLAG_USE_CACHED_ADDRESSES)
-    public void testIsDnsLookupRequired_NetworkChange_RemoteV4V6_FlagOn() throws Exception {
+    public void testIsDnsLookupRequired_NetworkChange_RemoteV4V6() throws Exception {
         verifyIsDnsLookupRequired(
                 true /* isNetworkChanged */,
                 false /* hasLocalV4 */,
@@ -1710,19 +1681,7 @@ public class IkeConnectionControllerTest extends IkeSessionTestBase {
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_USE_CACHED_ADDRESSES)
-    public void testIsDnsLookupRequired_LocalV4_RemoteV4V6_FlagOff() throws Exception {
-        verifyIsDnsLookupRequired(
-                true /* hasLocalV4 */,
-                false /* hasLocalV6 */,
-                true /* hasRemoteV4Cached */,
-                true /* hasRemoteV6Cached */,
-                true /* dnsExpected */);
-    }
-
-    @Test
-    @RequiresFlagsEnabled(Flags.FLAG_USE_CACHED_ADDRESSES)
-    public void testIsDnsLookupRequired_LocalV4_RemoteV4V6_FlagOn() throws Exception {
+    public void testIsDnsLookupRequired_LocalV4_RemoteV4V6() throws Exception {
         verifyIsDnsLookupRequired(
                 true /* hasLocalV4 */,
                 false /* hasLocalV6 */,
