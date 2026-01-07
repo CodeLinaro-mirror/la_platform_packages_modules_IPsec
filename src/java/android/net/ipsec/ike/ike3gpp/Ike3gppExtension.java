@@ -29,8 +29,8 @@ import java.util.Objects;
  * <p>Ike3gppExtension must be set in IkeSessionParams.Builder in order for it to be enabled during
  * an IKE Session.
  *
- * @see 3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP access
- *     networks
+ * @see "3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP access
+ *     networks"
  * @hide
  */
 @SystemApi
