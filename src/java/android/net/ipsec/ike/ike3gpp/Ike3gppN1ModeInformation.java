@@ -25,7 +25,7 @@ import java.util.Objects;
  * Ike3gppN1ModeInformation represents the data provided by the peer/remote endpoint for an
  * N1_MODE_INFORMATION Notify payload.
  *
- * @see 3GPP TS 24.302 Section 8.2.9.16 N1_MODE_INFORMATION Notify payload
+ * @see "3GPP TS 24.302 Section 8.2.9.16 N1_MODE_INFORMATION Notify payload"
  * @hide
  */
 @SystemApi
