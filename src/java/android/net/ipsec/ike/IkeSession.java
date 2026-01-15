@@ -458,7 +458,6 @@ public final class IkeSession implements AutoCloseable {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     public void requestLivenessCheck() {
         mIkeSessionStateMachine.requestLivenessCheck();
     }

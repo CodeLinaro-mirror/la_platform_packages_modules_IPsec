@@ -2,14 +2,6 @@ package: "com.android.ipsec.flags"
 container: "com.android.ipsec"
 
 flag {
-  name: "liveness_check_api"
-  is_exported: true
-  namespace: "ipsec"
-  description: "This is a new feature includes APIs to check liveness and notify liveness status."
-  bug: "286171724"
-}
-
-flag {
   name: "dpd_disable_api"
   is_exported: true
   namespace: "ipsec"
