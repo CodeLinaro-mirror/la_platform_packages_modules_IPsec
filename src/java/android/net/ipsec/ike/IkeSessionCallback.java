@@ -16,7 +16,6 @@
 
 package android.net.ipsec.ike;
 
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.SuppressLint;
@@ -49,7 +48,6 @@ public interface IkeSessionCallback {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     int LIVENESS_STATUS_ON_DEMAND_STARTED = 0;
 
     /**
@@ -59,7 +57,6 @@ public interface IkeSessionCallback {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     int LIVENESS_STATUS_ON_DEMAND_ONGOING = 1;
 
     /**
@@ -69,7 +66,6 @@ public interface IkeSessionCallback {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     int LIVENESS_STATUS_BACKGROUND_STARTED = 2;
 
     /**
@@ -79,7 +75,6 @@ public interface IkeSessionCallback {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     int LIVENESS_STATUS_BACKGROUND_ONGOING = 3;
 
     /**
@@ -91,7 +86,6 @@ public interface IkeSessionCallback {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     int LIVENESS_STATUS_SUCCESS = 4;
 
     /**
@@ -108,7 +102,6 @@ public interface IkeSessionCallback {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     int LIVENESS_STATUS_FAILURE = 5;
 
     /** @hide */
@@ -322,6 +315,5 @@ public interface IkeSessionCallback {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     default void onLivenessStatusChanged(@LivenessStatus int status) {}
 }
