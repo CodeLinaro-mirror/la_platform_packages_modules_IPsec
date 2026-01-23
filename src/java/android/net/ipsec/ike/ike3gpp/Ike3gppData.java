@@ -25,8 +25,8 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Ike3gppData represents 3GPP-specific data sent by the peer/remote endpoint.
  *
- * @see 3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP access
- *     networks
+ * @see "3GPP ETSI TS 24.302: Access to the 3GPP Evolved Packet Core (EPC) via non-3GPP access
+ *     networks"
  * @hide
  */
 @SystemApi
