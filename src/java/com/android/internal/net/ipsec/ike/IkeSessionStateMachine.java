@@ -4428,7 +4428,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine
             X509Certificate endCert = null;
             List<X509Certificate> certList = new LinkedList<>();
 
-            // TODO: b/122676944 Extract CRL from IkeCrlPayload when we support IkeCrlPayload
+            // When we support IkeCrlPayload, need to extract CRL from IkeCrlPayload
             for (IkeCertPayload certPayload : certPayloads) {
                 X509Certificate cert = ((IkeCertX509CertPayload) certPayload).certificate;
 

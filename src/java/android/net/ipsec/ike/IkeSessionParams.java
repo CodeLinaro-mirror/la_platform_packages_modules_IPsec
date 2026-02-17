@@ -873,7 +873,6 @@ public final class IkeSessionParams {
      * @hide
      */
     @SystemApi
-    @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
     @NonNull
     public int[] getLivenessRetransmissionTimeoutsMillis() {
         return mLivenessRetransTimeoutMsList;
@@ -2182,7 +2181,6 @@ public final class IkeSessionParams {
          * @hide
          */
         @SystemApi
-        @FlaggedApi("com.android.ipsec.flags.liveness_check_api")
         @NonNull
         public Builder setLivenessRetransmissionTimeoutsMillis(
                 @NonNull int[] retransTimeoutMillisList) {
