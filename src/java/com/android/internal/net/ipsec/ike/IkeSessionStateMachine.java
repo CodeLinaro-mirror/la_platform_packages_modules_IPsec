@@ -3533,7 +3533,7 @@ public class IkeSessionStateMachine extends AbstractSessionStateMachine
             IkeSaPayload respSaPayload = null;
             IkeKePayload respKePayload = null;
 
-            /**
+            /*
              * There MAY be multiple NAT_DETECTION_SOURCE_IP payloads in a message if the sender
              * does not know which of several network attachments will be used to send the packet.
              */
