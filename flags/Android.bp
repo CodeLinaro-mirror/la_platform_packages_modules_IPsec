@@ -29,7 +29,7 @@ java_aconfig_library {
     name: "ipsec_aconfig_flags_lib",
     aconfig_declarations: "ipsec_aconfig_flags",
     defaults: ["framework-minus-apex-aconfig-java-defaults"],
-    min_sdk_version: "30",
+    min_sdk_version: "31",
     apex_available: [
         "com.android.ipsec",
     ],
