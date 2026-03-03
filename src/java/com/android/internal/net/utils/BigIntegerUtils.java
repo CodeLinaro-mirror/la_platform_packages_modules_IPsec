@@ -37,7 +37,7 @@ public final class BigIntegerUtils {
      * @return the argument converted to BigInteger by an unsigned conversion
      */
     public static BigInteger unsignedByteArrayToBigInteger(byte[] byteArray) {
-        return new BigInteger(1/** positive */, byteArray);
+        return new BigInteger(1 /* positive */, byteArray);
     }
 
     /**
