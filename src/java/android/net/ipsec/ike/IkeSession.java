@@ -22,7 +22,6 @@ import static android.net.ipsec.ike.IkeSessionParams.ESP_IP_VERSION_IPV6;
 import static android.net.ipsec.ike.IkeSessionParams.IKE_NATT_KEEPALIVE_DELAY_SEC_MAX;
 import static android.net.ipsec.ike.IkeSessionParams.IKE_NATT_KEEPALIVE_DELAY_SEC_MIN;
 
-import android.annotation.FlaggedApi;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.SuppressLint;
@@ -467,7 +466,6 @@ public final class IkeSession implements AutoCloseable {
      *
      * @param pw Print writer
      */
-    @FlaggedApi("com.android.ipsec.flags.dumpsys_api")
     public void dump(@NonNull PrintWriter pw) {
         // Please make sure that the dump is thread-safe
         // so the client won't get a crash or exception when adding codes to the dump.

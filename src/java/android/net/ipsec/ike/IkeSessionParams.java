@@ -22,7 +22,6 @@ import static android.system.OsConstants.AF_INET6;
 import static com.android.internal.net.ipsec.ike.utils.IkeCertUtils.certificateFromByteArray;
 import static com.android.internal.net.ipsec.ike.utils.IkeCertUtils.privateKeyFromByteArray;
 
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -370,7 +369,6 @@ public final class IkeSessionParams {
      *
      * <p>@see {@link Builder#setDpdDelaySeconds}
      */
-    @FlaggedApi("com.android.ipsec.flags.dpd_disable_api")
     public static final int IKE_DPD_DELAY_SEC_DISABLED = Integer.MAX_VALUE;
 
     /** @hide */
@@ -910,7 +908,6 @@ public final class IkeSessionParams {
      * @return A Set of enabled IKE options that have been added using {@link
      *     Builder#addIkeOption(int)}
      */
-    @FlaggedApi("com.android.ipsec.flags.enabled_ike_options_api")
     @NonNull
     @IkeOption
     public Set<Integer> getIkeOptions() {
