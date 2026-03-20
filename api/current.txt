@@ -1,6 +1,5 @@
 // Signature format: 6.0
 // - style=java
-// - overloaded-method-order=source
 // - strip-java-lang-prefix=legacy
 // - type-argument-spacing=legacy
 package android.net.eap {
@@ -409,8 +408,8 @@ package android.net.ipsec.ike.exceptions {
   }
 
   public final class IkeInternalException extends android.net.ipsec.ike.exceptions.IkeNonProtocolException {
-    ctor public IkeInternalException(@NonNull Throwable);
     ctor public IkeInternalException(@NonNull String, @NonNull Throwable);
+    ctor public IkeInternalException(@NonNull Throwable);
   }
 
   public final class IkeNetworkLostException extends android.net.ipsec.ike.exceptions.IkeNonProtocolException {
