@@ -1,6 +1,5 @@
 // Signature format: 6.0
 // - style=java
-// - strip-java-lang-prefix=legacy
 package android.net.eap {
 
   public final class EapSessionConfig {
@@ -49,7 +48,7 @@ package android.net.ipsec.ike {
     method @Deprecated @NonNull public java.util.List<android.net.ipsec.ike.ChildSaProposal> getSaProposals();
   }
 
-  public final class IkeSession implements java.lang.AutoCloseable {
+  public final class IkeSession implements AutoCloseable {
     method public void requestLivenessCheck();
     method public void setNetwork(@NonNull android.net.Network);
   }

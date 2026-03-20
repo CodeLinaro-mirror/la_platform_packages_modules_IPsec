@@ -1,9 +1,8 @@
 // Signature format: 6.0
 // - style=java
-// - strip-java-lang-prefix=legacy
 package android.net.ipsec.ike {
 
-  public final class IkeSession implements java.lang.AutoCloseable {
+  public final class IkeSession implements AutoCloseable {
     method public void setNetwork(@NonNull android.net.Network, int, int, @IntRange(from=0xa, to=0xe10) int);
     method public void setUnderpinnedNetwork(@NonNull android.net.Network);
   }
