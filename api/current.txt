@@ -1,6 +1,5 @@
 // Signature format: 6.0
 // - style=java
-// - type-argument-spacing=legacy
 package android.net.eap {
 
   public final class EapAkaInfo extends android.net.eap.EapInfo {
@@ -302,7 +301,7 @@ package android.net.ipsec.ike {
 
   public abstract class SaProposal {
     method @NonNull public java.util.List<Integer> getDhGroups();
-    method @NonNull public java.util.List<android.util.Pair<Integer,Integer>> getEncryptionAlgorithms();
+    method @NonNull public java.util.List<android.util.Pair<Integer, Integer>> getEncryptionAlgorithms();
     method @NonNull public java.util.List<Integer> getIntegrityAlgorithms();
     method @NonNull public static java.util.Set<Integer> getSupportedDhGroups();
     field public static final int DH_GROUP_1024_BIT_MODP = 2; // 0x2
