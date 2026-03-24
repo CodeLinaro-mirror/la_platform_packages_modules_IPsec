@@ -80,7 +80,7 @@ java_sdk_library {
         "android.net.eap",
         "com.android.ipsec.flags",
     ],
-    min_sdk_version: "30",
+    min_sdk_version: "31",
 }
 
 filegroup {
@@ -109,7 +109,7 @@ filegroup {
 // Provides internal classes needed to build the ike sources.
 java_library {
     name: "ike-internals",
-    min_sdk_version: "30",
+    min_sdk_version: "31",
     apex_available: [
         "com.android.ipsec",
         "test_com.android.ipsec",
