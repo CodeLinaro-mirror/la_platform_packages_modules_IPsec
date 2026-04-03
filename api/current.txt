@@ -1,4 +1,5 @@
-// Signature format: 2.0
+// Signature format: 6.0
+// - style=java
 package android.net.eap {
 
   public final class EapAkaInfo extends android.net.eap.EapInfo {
@@ -86,8 +87,8 @@ package android.net.eap {
 package android.net.ipsec.ike {
 
   public final class ChildSaProposal extends android.net.ipsec.ike.SaProposal {
-    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedEncryptionAlgorithms();
-    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedIntegrityAlgorithms();
+    method @NonNull public static java.util.Set<Integer> getSupportedEncryptionAlgorithms();
+    method @NonNull public static java.util.Set<Integer> getSupportedIntegrityAlgorithms();
   }
 
   public static final class ChildSaProposal.Builder {
@@ -158,10 +159,10 @@ package android.net.ipsec.ike {
   }
 
   public final class IkeSaProposal extends android.net.ipsec.ike.SaProposal {
-    method @NonNull public java.util.List<java.lang.Integer> getPseudorandomFunctions();
-    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedEncryptionAlgorithms();
-    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedIntegrityAlgorithms();
-    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedPseudorandomFunctions();
+    method @NonNull public java.util.List<Integer> getPseudorandomFunctions();
+    method @NonNull public static java.util.Set<Integer> getSupportedEncryptionAlgorithms();
+    method @NonNull public static java.util.Set<Integer> getSupportedIntegrityAlgorithms();
+    method @NonNull public static java.util.Set<Integer> getSupportedPseudorandomFunctions();
   }
 
   public static final class IkeSaProposal.Builder {
@@ -173,7 +174,7 @@ package android.net.ipsec.ike {
     method @NonNull public android.net.ipsec.ike.IkeSaProposal build();
   }
 
-  public final class IkeSession implements java.lang.AutoCloseable {
+  public final class IkeSession implements AutoCloseable {
     ctor public IkeSession(@NonNull android.content.Context, @NonNull android.net.ipsec.ike.IkeSessionParams, @NonNull android.net.ipsec.ike.ChildSessionParams, @NonNull java.util.concurrent.Executor, @NonNull android.net.ipsec.ike.IkeSessionCallback, @NonNull android.net.ipsec.ike.ChildSessionCallback);
     method public void close();
     method public void closeChildSession(@NonNull android.net.ipsec.ike.ChildSessionCallback);
@@ -222,7 +223,7 @@ package android.net.ipsec.ike {
   public final class IkeSessionParams {
     method @IntRange(from=0x14) public int getDpdDelaySeconds();
     method @IntRange(from=0x12c, to=0x15180) public int getHardLifetimeSeconds();
-    method @NonNull public java.util.Set<java.lang.Integer> getIkeOptions();
+    method @NonNull public java.util.Set<Integer> getIkeOptions();
     method @NonNull public java.util.List<android.net.ipsec.ike.IkeSaProposal> getIkeSaProposals();
     method @NonNull public android.net.ipsec.ike.IkeSessionParams.IkeAuthConfig getLocalAuthConfig();
     method @NonNull public android.net.ipsec.ike.IkeIdentification getLocalIdentification();
@@ -299,10 +300,10 @@ package android.net.ipsec.ike {
   }
 
   public abstract class SaProposal {
-    method @NonNull public java.util.List<java.lang.Integer> getDhGroups();
-    method @NonNull public java.util.List<android.util.Pair<java.lang.Integer,java.lang.Integer>> getEncryptionAlgorithms();
-    method @NonNull public java.util.List<java.lang.Integer> getIntegrityAlgorithms();
-    method @NonNull public static java.util.Set<java.lang.Integer> getSupportedDhGroups();
+    method @NonNull public java.util.List<Integer> getDhGroups();
+    method @NonNull public java.util.List<android.util.Pair<Integer, Integer>> getEncryptionAlgorithms();
+    method @NonNull public java.util.List<Integer> getIntegrityAlgorithms();
+    method @NonNull public static java.util.Set<Integer> getSupportedDhGroups();
     field public static final int DH_GROUP_1024_BIT_MODP = 2; // 0x2
     field public static final int DH_GROUP_1536_BIT_MODP = 5; // 0x5
     field public static final int DH_GROUP_2048_BIT_MODP = 14; // 0xe
@@ -396,7 +397,7 @@ package android.net.ipsec.ike {
 
 package android.net.ipsec.ike.exceptions {
 
-  public abstract class IkeException extends java.lang.Exception {
+  public abstract class IkeException extends Exception {
   }
 
   public final class IkeIOException extends android.net.ipsec.ike.exceptions.IkeNonProtocolException {
@@ -405,8 +406,8 @@ package android.net.ipsec.ike.exceptions {
   }
 
   public final class IkeInternalException extends android.net.ipsec.ike.exceptions.IkeNonProtocolException {
-    ctor public IkeInternalException(@NonNull Throwable);
     ctor public IkeInternalException(@NonNull String, @NonNull Throwable);
+    ctor public IkeInternalException(@NonNull Throwable);
   }
 
   public final class IkeNetworkLostException extends android.net.ipsec.ike.exceptions.IkeNonProtocolException {
